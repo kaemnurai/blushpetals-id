@@ -1,0 +1,18 @@
+{
+  "name": "Blush Petals.id",
+  "short_name": "Blush Petals",
+  "description": "Blooming Happiness in Every Bouquet",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff5f7",
+  "theme_color": "#fff5f7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
