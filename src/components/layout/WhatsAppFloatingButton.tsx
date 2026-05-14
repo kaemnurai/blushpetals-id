@@ -6,7 +6,7 @@ import { quickEnquiryUrl } from "@/lib/whatsapp";
 
 export function WhatsAppFloatingButton() {
   const pathname = usePathname();
-  if (pathname?.startsWith("/admin")) return null;
+  if (pathname !== "/") return null;
 
   return (
     <motion.a
