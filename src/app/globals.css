@@ -24,6 +24,7 @@
 }
 
 @layer components {
+  /* Glass variants */
   .glass {
     @apply bg-white/70 backdrop-blur-xl border border-white/40;
   }
@@ -32,10 +33,59 @@
     @apply bg-ink-900/30 backdrop-blur-md border border-white/20;
   }
 
+  .glass-premium {
+    @apply bg-white/70 backdrop-blur-2xl border border-white/50 shadow-float;
+  }
+
+  /* Typography utilities */
   .text-balance {
     text-wrap: balance;
   }
 
+  .gradient-text {
+    @apply bg-gradient-to-br from-blush-600 via-blush-500 to-blush-700 bg-clip-text text-transparent;
+  }
+
+  .section-label {
+    @apply text-blush-500 text-[10px] md:text-[11px] uppercase tracking-[0.22em] font-medium;
+  }
+
+  /* Section heading — minimum text-5xl on desktop, tight editorial leading */
+  .section-title {
+    @apply font-serif text-4xl md:text-5xl text-ink-900 leading-[1.08] tracking-tight;
+  }
+
+  /* Page / hero heading — text-6xl on desktop */
+  .page-title {
+    @apply font-serif text-5xl md:text-6xl text-ink-900 leading-[1.04] tracking-tight;
+  }
+
+  /* Premium card */
+  .premium-card {
+    @apply rounded-3xl bg-white border border-blush-100/50 shadow-card
+           transition-all duration-300 ease-premium
+           hover:shadow-premium hover:-translate-y-1;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 h-12 px-6 rounded-full
+           bg-gradient-to-br from-blush-400 via-blush-500 to-blush-600
+           text-white text-sm font-medium
+           shadow-soft hover:shadow-glow
+           transition-all duration-300 ease-premium
+           hover:brightness-[1.04] active:scale-[0.97];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 h-12 px-6 rounded-full
+           bg-white text-ink-900 border border-blush-200 text-sm font-medium
+           hover:bg-blush-50 hover:border-blush-300
+           transition-all duration-200
+           active:scale-[0.97];
+  }
+
+  /* Scrollbar */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -45,6 +95,7 @@
     scrollbar-width: none;
   }
 
+  /* Shimmer loading */
   .shimmer {
     background: linear-gradient(
       90deg,
@@ -55,6 +106,14 @@
     background-size: 1000px 100%;
     @apply animate-shimmer;
   }
+
+  /* FAQ accordion smooth animation */
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
 }
 
 @layer utilities {
@@ -64,5 +123,9 @@
 
   .mask-fade-b {
     mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
+
+  .ease-premium {
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 }

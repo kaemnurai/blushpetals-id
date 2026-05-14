@@ -7,17 +7,20 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Input";
 import type { OrderForm, Product } from "@/lib/types";
 import { buildOrderMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
+import { createOrder } from "@/lib/supabase/orders";
 import { Send } from "lucide-react";
 
 interface OrderModalProps {
   open: boolean;
   onClose: () => void;
   product: Product;
+  initialWrap?: string;
+  initialNote?: string;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function OrderModal({ open, onClose, product }: OrderModalProps) {
+export function OrderModal({ open, onClose, product, initialWrap, initialNote }: OrderModalProps) {
   const [submitting, setSubmitting] = React.useState(false);
   const [form, setForm] = React.useState<OrderForm>({
     customerName: "",
@@ -25,20 +28,28 @@ export function OrderModal({ open, onClose, product }: OrderModalProps) {
     orderDate: today(),
     pickupDate: today(),
     productName: product.name,
-    wrappingColor: "",
+    wrappingColor: initialWrap ?? "",
     cardMessage: "",
-    note: "",
+    note: initialNote ?? "",
     method: "ambil",
   });
 
+  // Re-sync product selections every time the modal opens so the
+  // latest wrapping / note choices from the detail page are reflected.
   React.useEffect(() => {
-    setForm((f) => ({ ...f, productName: product.name }));
-  }, [product.name]);
+    if (!open) return;
+    setForm((f) => ({
+      ...f,
+      productName: product.name,
+      wrappingColor: initialWrap ?? f.wrappingColor,
+      note: initialNote ?? f.note,
+    }));
+  }, [open, product.name, initialWrap, initialNote]);
 
   const update = <K extends keyof OrderForm>(key: K, value: OrderForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.customerName.trim()) {
       toast.error("Mohon isi nama pemesan.");
@@ -48,15 +59,31 @@ export function OrderModal({ open, onClose, product }: OrderModalProps) {
       toast.error("Nomor WhatsApp tidak valid.");
       return;
     }
+
     setSubmitting(true);
-    const msg = buildOrderMessage(form);
-    const url = buildWhatsAppUrl(msg);
-    setTimeout(() => {
+    try {
+      console.log("[OrderModal] Menyimpan pesanan ke database…", {
+        customer: form.customerName,
+        product: product.name,
+        price: product.price,
+      });
+
+      const orderId = await createOrder(form, product);
+      console.log("[OrderModal] Pesanan berhasil disimpan. ID:", orderId);
+
+      const msg = buildOrderMessage(form);
+      const url = buildWhatsAppUrl(msg);
       window.open(url, "_blank");
-      setSubmitting(false);
-      toast.success("Mengarahkan ke WhatsApp…");
+      toast.success("Pesanan berhasil disimpan! Mengarahkan ke WhatsApp…");
       onClose();
-    }, 350);
+    } catch (err: unknown) {
+      console.error("[OrderModal] Gagal menyimpan pesanan:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Gagal menyimpan pesanan. Silakan coba lagi.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

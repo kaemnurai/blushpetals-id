@@ -18,28 +18,41 @@ export function AdminGuard({ children }: { children: (ctx: { email?: string; sig
 
   React.useEffect(() => {
     let mounted = true;
+
     if (!isSupabaseConfigured()) {
       setState({ loading: false, authed: false });
       return;
     }
+
     const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    if (!supabase) {
+      setState({ loading: false, authed: false });
+      return;
+    }
 
-    supabase.auth.getUser().then(({ data }) => {
+    // getSession() reads from localStorage — no network, resolves immediately.
+    // getUser() makes a network round-trip that can hang and cause redirect loops.
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
-      if (!data.user) {
-        router.replace("/admin/login");
-      } else {
-        setState({ loading: false, authed: true, email: data.user.email ?? undefined });
-      }
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!mounted) return;
+      console.log("[AdminGuard] getSession:", session ? "session found" : "no session");
       if (!session) {
+        setState({ loading: false, authed: false });
         router.replace("/admin/login");
       } else {
         setState({ loading: false, authed: true, email: session.user.email ?? undefined });
+      }
+    });
+
+    // Only react to explicit auth events — not INITIAL_SESSION which can fire
+    // with null before localStorage is fully read, causing a spurious redirect.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      console.log("[AdminGuard] auth event:", event, session ? "session" : "no session");
+      if (event === "SIGNED_OUT") {
+        setState({ loading: false, authed: false });
+        router.replace("/admin/login");
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        setState({ loading: false, authed: true, email: session?.user.email ?? undefined });
       }
     });
 

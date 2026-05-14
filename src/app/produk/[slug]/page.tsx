@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { DUMMY_PRODUCTS, getProductBySlug } from "@/lib/data/products";
+import { getProductBySlug, getAllProductSlugs } from "@/lib/supabase/queries";
 import { ProductDetail } from "@/components/product/ProductDetail";
 
 interface PageProps {
   params: { slug: string };
 }
 
-export function generateStaticParams() {
-  return DUMMY_PRODUCTS.map((p) => ({ slug: p.slug }));
+// Pre-build known product slugs at deploy time; new products are
+// server-rendered on first visit and then cached for 5 minutes.
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const slugs = await getAllProductSlugs();
+  return slugs;
 }
 
-export function generateMetadata({ params }: PageProps): Metadata {
-  const product = getProductBySlug(params.slug);
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const product = await getProductBySlug(params.slug);
   if (!product) return { title: "Produk tidak ditemukan" };
   return {
     title: product.name,
@@ -25,8 +30,8 @@ export function generateMetadata({ params }: PageProps): Metadata {
   };
 }
 
-export default function ProductPage({ params }: PageProps) {
-  const product = getProductBySlug(params.slug);
+export default async function ProductPage({ params }: PageProps) {
+  const product = await getProductBySlug(params.slug);
   if (!product) notFound();
   return <ProductDetail product={product} />;
 }

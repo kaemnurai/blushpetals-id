@@ -1,22 +1,17 @@
-"use client";
+import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-
-let client: SupabaseClient | null = null;
+let clientInstance: SupabaseClient | null = null;
 
 export function getSupabaseBrowserClient(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anon) return null;
-  if (!client) {
-    client = createClient(url, anon, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-    });
+  if (!isSupabaseConfigured()) return null;
+  if (!clientInstance) {
+    clientInstance = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
   }
-  return client;
+  return clientInstance;
 }
 
 export function isSupabaseConfigured(): boolean {

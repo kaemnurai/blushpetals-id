@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CatalogClient } from "@/components/catalog/CatalogClient";
-import { DUMMY_PRODUCTS } from "@/lib/data/products";
+import { getProducts } from "@/lib/supabase/queries";
 
 export const metadata: Metadata = {
   title: "Katalog Produk",
@@ -9,20 +9,24 @@ export const metadata: Metadata = {
     "Koleksi lengkap bouquet Blush Petals.id — artificial, premium, dan fresh flower.",
 };
 
-export default function KatalogPage() {
+// Revalidate every 5 minutes — catalog should reflect stock changes quickly.
+export const revalidate = 300;
+
+export default async function KatalogPage() {
+  const products = await getProducts();
+
   return (
     <section className="container py-6 md:py-10">
-      <header className="mb-6 md:mb-10">
-        <p className="text-blush-600 text-xs uppercase tracking-widest mb-2">
-          Katalog Produk
-        </p>
-        <h1 className="font-serif text-3xl md:text-5xl text-ink-900">
-          Temukan bouquet
-          <br className="hidden md:block" /> sempurna untuk momenmu.
+      <header className="mb-8 md:mb-12">
+        <p className="section-label mb-4">Katalog Produk</p>
+        <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-ink-900 leading-[1.08] tracking-tight">
+          Temukan bouquet{" "}
+          <span className="italic text-blush-600">sempurna</span>
+          <br className="hidden md:block" /> untuk momenmu.
         </h1>
       </header>
       <Suspense fallback={<div className="text-sm text-ink-400">Memuat…</div>}>
-        <CatalogClient products={DUMMY_PRODUCTS} />
+        <CatalogClient products={products} />
       </Suspense>
     </section>
   );

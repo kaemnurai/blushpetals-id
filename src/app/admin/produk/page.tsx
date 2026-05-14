@@ -10,8 +10,8 @@ export default function AdminProdukPage() {
       {({ email, signOut }) => (
         <AdminShell email={email} onSignOut={signOut}>
           <div className="mb-8">
-            <p className="text-blush-600 text-xs uppercase tracking-widest">Manajemen</p>
-            <h1 className="font-serif text-3xl text-ink-900 mt-1">Kelola Produk</h1>
+            <p className="section-label mb-1">Manajemen</p>
+            <h1 className="font-serif text-3xl text-ink-900">Kelola Produk</h1>
             <p className="text-sm text-ink-500 mt-1">
               Tambah, edit, dan hapus produk Blush Petals.id.
             </p>

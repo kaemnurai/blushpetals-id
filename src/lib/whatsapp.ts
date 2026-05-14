@@ -2,23 +2,24 @@ import { SITE } from "@/lib/data/site";
 import type { OrderForm } from "@/lib/types";
 import { formatDateID } from "@/lib/utils";
 
-export function buildOrderMessage(form: OrderForm): string {
+export function buildOrderMessage(form: OrderForm, orderId?: string): string {
+  const ref = orderId ? `#${orderId.slice(-6).toUpperCase()}` : null;
   const lines = [
     "Halo Blush Petals.id 🌸",
     "",
     "Saya ingin memesan bouquet:",
-    "",
-    `Nama: ${form.customerName}`,
-    `No WhatsApp: ${form.whatsapp}`,
-    `Produk: ${form.productName}`,
-    `Tanggal Pesan: ${form.orderDate ? formatDateID(form.orderDate) : "-"}`,
-    `Tanggal Ambil: ${form.pickupDate ? formatDateID(form.pickupDate) : "-"}`,
+    ...(ref ? [`ID Pesanan: ${ref}`, ""] : [""]),
+    `Nama          : ${form.customerName}`,
+    `No WhatsApp   : ${form.whatsapp}`,
+    `Produk        : ${form.productName}`,
+    `Tanggal Pesan : ${form.orderDate  ? formatDateID(form.orderDate)  : "-"}`,
+    `Tanggal Ambil : ${form.pickupDate ? formatDateID(form.pickupDate) : "-"}`,
     `Warna Wrapping: ${form.wrappingColor || "-"}`,
-    `Metode Pengambilan: ${form.method === "ambil" ? "Ambil ke store" : "GoSend"}`,
-    `Kartu Ucapan: ${form.cardMessage || "-"}`,
-    `Catatan: ${form.note || "-"}`,
+    `Metode        : ${form.method === "ambil" ? "Ambil ke store" : "GoSend"}`,
+    `Kartu Ucapan  : ${form.cardMessage || "-"}`,
+    `Catatan       : ${form.note || "-"}`,
     "",
-    "Terima kasih.",
+    "Terima kasih. 🌸",
   ];
   return lines.join("\n");
 }
