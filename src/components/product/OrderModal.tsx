@@ -8,28 +8,8 @@ import { Field, Input, Textarea } from "@/components/ui/Input";
 import type { OrderForm, Product } from "@/lib/types";
 import { buildOrderMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { createOrder } from "@/lib/supabase/orders";
+import { BOUQUET_COLORS } from "@/lib/data/bouquet-colors";
 import { Send } from "lucide-react";
-
-// ── Shared colour constants (must match ProductDetail) ────────────
-
-const WRAPPING_COLORS = [
-  { name: "Pink",          hex: "#F9B8C4" },
-  { name: "Blue",          hex: "#B8D4E8" },
-  { name: "Emerald Green", hex: "#4CAF82" },
-  { name: "Yellow",        hex: "#F9E4A0" },
-  { name: "Lilac",         hex: "#C8B4D8" },
-  { name: "Tosca",         hex: "#62C4BE" },
-  { name: "Grey",          hex: "#B8B8B8" },
-];
-
-const RIBBON_COLORS = [
-  { name: "Gold",       hex: "#D4A843" },
-  { name: "Red",        hex: "#C0392B" },
-  { name: "Baby Blue",  hex: "#89CFF0" },
-  { name: "Maroon",     hex: "#80002B" },
-  { name: "Dusty Pink", hex: "#D4A0A0" },
-  { name: "Silver",     hex: "#A8A9AD" },
-];
 
 // ── Compact pill picker used inside the modal ─────────────────────
 
@@ -96,8 +76,8 @@ export function OrderModal({
     orderDate: today(),
     pickupDate: today(),
     productName: product.name,
-    wrappingColor: initialWrap ?? WRAPPING_COLORS[0].name,
-    ribbonColor: initialRibbon ?? RIBBON_COLORS[0].name,
+    wrappingColor: initialWrap ?? BOUQUET_COLORS[0].name,
+    ribbonColor: initialRibbon ?? BOUQUET_COLORS[0].name,
     cardMessage: "",
     note: "",
     method: initialMethod ?? "ambil",
@@ -112,8 +92,8 @@ export function OrderModal({
       orderDate: today(),
       pickupDate: today(),
       productName:   product.name,
-      wrappingColor: initialWrap   ?? WRAPPING_COLORS[0].name,
-      ribbonColor:   initialRibbon ?? RIBBON_COLORS[0].name,
+      wrappingColor: initialWrap   ?? BOUQUET_COLORS[0].name,
+      ribbonColor:   initialRibbon ?? BOUQUET_COLORS[0].name,
       cardMessage: "",
       note: "",
       method: initialMethod ?? "ambil",
@@ -137,7 +117,7 @@ export function OrderModal({
     setSubmitting(true);
 
     // Build WA URL synchronously — must happen before any await
-    const msg = buildOrderMessage(form);
+    const msg = buildOrderMessage({ ...form, price: product.price });
     const url = buildWhatsAppUrl(msg);
 
     // Open WhatsApp BEFORE any await.
@@ -245,7 +225,7 @@ export function OrderModal({
 
           <Field label="Warna Wrapping">
             <ColorPills
-              colors={WRAPPING_COLORS}
+              colors={BOUQUET_COLORS}
               value={form.wrappingColor}
               onChange={(v) => update("wrappingColor", v)}
             />
@@ -253,7 +233,7 @@ export function OrderModal({
 
           <Field label="Pilihan Pita">
             <ColorPills
-              colors={RIBBON_COLORS}
+              colors={BOUQUET_COLORS}
               value={form.ribbonColor}
               onChange={(v) => update("ribbonColor", v)}
             />

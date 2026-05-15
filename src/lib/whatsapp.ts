@@ -1,6 +1,6 @@
 import { SITE } from "@/lib/data/site";
 import type { OrderForm } from "@/lib/types";
-import { formatDateID } from "@/lib/utils";
+import { formatDateID, formatRupiah } from "@/lib/utils";
 
 export function buildOrderMessage(form: OrderForm, orderId?: string): string {
   const ref = orderId ? `#${orderId.slice(-6).toUpperCase()}` : null;
@@ -9,16 +9,17 @@ export function buildOrderMessage(form: OrderForm, orderId?: string): string {
     "",
     "Saya ingin memesan bouquet:",
     ...(ref ? [`ID Pesanan: ${ref}`, ""] : [""]),
-    `Nama          : ${form.customerName}`,
-    `No WhatsApp   : ${form.whatsapp}`,
-    `Produk        : ${form.productName}`,
-    `Tanggal Pesan : ${form.orderDate  ? formatDateID(form.orderDate)  : "-"}`,
-    `Tanggal Ambil : ${form.pickupDate ? formatDateID(form.pickupDate) : "-"}`,
-    `Warna Wrapping: ${form.wrappingColor || "-"}`,
-    `Pita          : ${form.ribbonColor || "-"}`,
-    `Metode        : ${form.method === "diantar" ? "Diantar" : "Ambil di Toko"}`,
-    `Kartu Ucapan  : ${form.cardMessage || "-"}`,
-    `Catatan       : ${form.note || "-"}`,
+    `Nama            : ${form.customerName}`,
+    `No WhatsApp     : ${form.whatsapp}`,
+    `Produk          : ${form.productName}`,
+    `Harga           : ${form.price ? formatRupiah(form.price) : "-"}`,
+    `Tanggal Pesan   : ${form.orderDate  ? formatDateID(form.orderDate)  : "-"}`,
+    `Tanggal Ambil   : ${form.pickupDate ? formatDateID(form.pickupDate) : "-"}`,
+    `Warna Wrapping  : ${form.wrappingColor || "-"}`,
+    `Pita            : ${form.ribbonColor || "-"}`,
+    `Metode          : ${form.method === "diantar" ? "Diantar" : "Ambil di Toko"}`,
+    `Kartu Ucapan    : ${form.cardMessage || "-"}`,
+    `Catatan         : ${form.note || "-"}`,
     "",
     "Terima kasih. 🌸",
   ];

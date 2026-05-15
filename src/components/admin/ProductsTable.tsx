@@ -76,11 +76,8 @@ async function fetchPage(
     .order("created_at", { ascending: false });
 
   // Category / stock / flag filter
-  if (
-    filter === "artificial-bouquet" ||
-    filter === "premium-collection" ||
-    filter === "fresh-flower"
-  ) {
+  // `filter in CATEGORY_LABEL` covers all ProductCategory values automatically.
+  if (filter in CATEGORY_LABEL) {
     q = q.eq("category", filter);
   } else if (
     filter === "tersedia" ||

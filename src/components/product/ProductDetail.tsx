@@ -16,27 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { ProductGallery } from "./ProductGallery";
 import { OrderModal } from "./OrderModal";
 import { formatRupiah, cn } from "@/lib/utils";
-
-// ── Customisation options ─────────────────────────────────────────
-
-const WRAPPING_COLORS = [
-  { name: "Pink",          hex: "#F9B8C4" },
-  { name: "Blue",          hex: "#B8D4E8" },
-  { name: "Emerald Green", hex: "#4CAF82" },
-  { name: "Yellow",        hex: "#F9E4A0" },
-  { name: "Lilac",         hex: "#C8B4D8" },
-  { name: "Tosca",         hex: "#62C4BE" },
-  { name: "Grey",          hex: "#B8B8B8" },
-];
-
-const RIBBON_COLORS = [
-  { name: "Gold",       hex: "#D4A843" },
-  { name: "Red",        hex: "#C0392B" },
-  { name: "Baby Blue",  hex: "#89CFF0" },
-  { name: "Maroon",     hex: "#80002B" },
-  { name: "Dusty Pink", hex: "#D4A0A0" },
-  { name: "Silver",     hex: "#A8A9AD" },
-];
+import { BOUQUET_COLORS } from "@/lib/data/bouquet-colors";
 
 // ── Share option row ──────────────────────────────────────────────
 
@@ -399,8 +379,8 @@ function ThankYouPopup({ onClose }: { onClose: () => void }) {
 
 export function ProductDetail({ product }: { product: Product }) {
   const [open, setOpen] = React.useState(false);
-  const [wrap, setWrap] = React.useState(WRAPPING_COLORS[0].name);
-  const [ribbon, setRibbon] = React.useState(RIBBON_COLORS[0].name);
+  const [wrap, setWrap] = React.useState(BOUQUET_COLORS[0].name);
+  const [ribbon, setRibbon] = React.useState(BOUQUET_COLORS[0].name);
   const [deliveryMethod, setDeliveryMethod] = React.useState<"ambil" | "diantar">("ambil");
   const [showThankYou, setShowThankYou] = React.useState(false);
 
@@ -482,7 +462,7 @@ export function ProductDetail({ product }: { product: Product }) {
             <div className="space-y-2">
               <p className="text-xs font-medium text-ink-700">Pilihan Wrapping</p>
               <div className="flex flex-wrap gap-2">
-                {WRAPPING_COLORS.map((c) => (
+                {BOUQUET_COLORS.map((c) => (
                   <button
                     key={c.name}
                     type="button"
@@ -507,7 +487,7 @@ export function ProductDetail({ product }: { product: Product }) {
             <div className="space-y-2">
               <p className="text-xs font-medium text-ink-700">Pilihan Pita</p>
               <div className="flex flex-wrap gap-2">
-                {RIBBON_COLORS.map((c) => (
+                {BOUQUET_COLORS.map((c) => (
                   <button
                     key={c.name}
                     type="button"

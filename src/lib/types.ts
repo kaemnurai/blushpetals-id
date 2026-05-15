@@ -133,6 +133,7 @@ export interface OrderForm {
   orderDate: string;
   pickupDate: string;
   productName: string;
+  price?: number;
   wrappingColor?: string;
   ribbonColor?: string;
   cardMessage?: string;
