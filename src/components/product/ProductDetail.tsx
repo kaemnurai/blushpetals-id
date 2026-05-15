@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ShoppingBag,
   Share2, MessageCircle, Camera, Send,
@@ -324,6 +324,77 @@ function ShareButton({
   );
 }
 
+// ── Thank-You Popup (shown when user returns from WhatsApp) ──────
+
+function ThankYouPopup({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      key="ty-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 sm:p-6"
+    >
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Card */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 28 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ type: "spring", damping: 26, stiffness: 380 }}
+        className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+      >
+        {/* Top accent bar */}
+        <div className="h-1.5 bg-gradient-to-r from-blush-200 via-blush-500 to-blush-200" />
+
+        {/* X close */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 h-7 w-7 rounded-full bg-blush-50 flex items-center justify-center text-ink-400 hover:text-ink-700 hover:bg-blush-100 transition"
+          aria-label="Tutup"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+
+        <div className="px-6 pt-7 pb-7 text-center">
+          {/* Flower icon */}
+          <div className="mb-4 mx-auto h-16 w-16 rounded-full bg-blush-50 flex items-center justify-center">
+            <span className="text-3xl" role="img" aria-label="bouquet">💐</span>
+          </div>
+
+          <h2 className="font-serif text-xl font-semibold text-ink-900 mb-2 leading-snug">
+            Terima kasih sudah memesan!
+          </h2>
+          <p className="text-sm text-ink-500 leading-relaxed">
+            Terima kasih sudah memesan di{" "}
+            <span className="font-semibold text-blush-600">BlushPetals.id</span>{" "}💐
+            <br />
+            Silakan lanjutkan chat admin melalui WhatsApp untuk konfirmasi pesanan.
+          </p>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-5 w-full h-11 rounded-2xl bg-blush-500 hover:bg-blush-600 active:bg-blush-700 text-white text-sm font-semibold transition-colors"
+          >
+            Mengerti
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── Product detail ────────────────────────────────────────────────
 
 export function ProductDetail({ product }: { product: Product }) {
@@ -331,6 +402,30 @@ export function ProductDetail({ product }: { product: Product }) {
   const [wrap, setWrap] = React.useState(WRAPPING_COLORS[0].name);
   const [ribbon, setRibbon] = React.useState(RIBBON_COLORS[0].name);
   const [deliveryMethod, setDeliveryMethod] = React.useState<"ambil" | "diantar">("ambil");
+  const [showThankYou, setShowThankYou] = React.useState(false);
+
+  // Detect user returning from WhatsApp via visibilitychange
+  React.useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      const raw = localStorage.getItem("blushpetals_wa_sent");
+      if (!raw) return;
+      const elapsed = Date.now() - Number(raw);
+      localStorage.removeItem("blushpetals_wa_sent");
+      if (elapsed < 3_600_000) {
+        setOpen(false);
+        setShowThankYou(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  const handleThankYouClose = React.useCallback(() => {
+    setShowThankYou(false);
+    setOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const gallery = product.gallery && product.gallery.length > 0
     ? product.gallery
@@ -496,6 +591,10 @@ export function ProductDetail({ product }: { product: Product }) {
         initialRibbon={ribbon}
         initialMethod={deliveryMethod}
       />
+
+      <AnimatePresence>
+        {showThankYou && <ThankYouPopup onClose={handleThankYouClose} />}
+      </AnimatePresence>
     </>
   );
 }
