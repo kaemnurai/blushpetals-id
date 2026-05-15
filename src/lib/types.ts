@@ -8,7 +8,10 @@ export type ProductCategory =
   | "artificial-bouquet"
   | "premium-collection"
   | "fresh-flower"
-  | "custom";
+  | "custom"
+  | "graduation"
+  | "money-bouquet"
+  | "snack-bouquet";
 
 export type StockStatus = "tersedia" | "preorder" | "sold-out";
 
@@ -163,6 +166,9 @@ export const CATEGORY_LABEL: Record<ProductCategory, string> = {
   "premium-collection": "Premium Collection",
   "fresh-flower":       "Fresh Flower Collection",
   "custom":             "Custom",
+  "graduation":         "Graduation",
+  "money-bouquet":      "Money Bouquet",
+  "snack-bouquet":      "Snack Bouquet",
 };
 
 export const STATUS_LABEL: Record<StockStatus, string> = {

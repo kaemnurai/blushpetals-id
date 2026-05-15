@@ -47,8 +47,15 @@ CREATE TABLE IF NOT EXISTS products (
   -- `category` (text slug) kept alongside FK for backward-compat with
   -- existing frontend filter queries.
   category         TEXT           NOT NULL DEFAULT 'artificial-bouquet'
-                                  CHECK (category IN
-                                    ('artificial-bouquet','premium-collection','fresh-flower','custom')),
+                                  CHECK (category IN (
+                                    'artificial-bouquet',
+                                    'premium-collection',
+                                    'fresh-flower',
+                                    'custom',
+                                    'graduation',
+                                    'money-bouquet',
+                                    'snack-bouquet'
+                                  )),
   category_id      UUID           REFERENCES categories(id) ON DELETE SET NULL,
   status           product_status NOT NULL DEFAULT 'available',
   -- General favourites flag (legacy – kept for compat)

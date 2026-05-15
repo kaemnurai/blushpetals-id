@@ -195,6 +195,9 @@ export async function getCategoryCovers(): Promise<Record<ProductCategory, strin
     "premium-collection",
     "fresh-flower",
     "custom",
+    "graduation",
+    "money-bouquet",
+    "snack-bouquet",
   ];
 
   const fallback = (): Record<ProductCategory, string> => {
