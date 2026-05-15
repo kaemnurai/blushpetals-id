@@ -470,7 +470,7 @@ export function ProductDetail({ product }: { product: Product }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="space-y-5 pb-28 md:pb-0"
+            className="space-y-5 pb-36 md:pb-0"
           >
             <div className="flex flex-wrap gap-2">
               <Badge>{CATEGORY_LABEL[product.category]}</Badge>
@@ -500,25 +500,23 @@ export function ProductDetail({ product }: { product: Product }) {
             </p>
 
             {/* Pilihan Wrapping */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-ink-700">Pilihan Wrapping</p>
-              {/* Mobile: horizontal swipe-scroll · Desktop: flex-wrap grid */}
-              <div className="flex gap-2 overflow-x-auto md:flex-wrap md:overflow-x-visible pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0"
-                style={{ scrollbarWidth: "none" }}>
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold text-ink-700 uppercase tracking-wide">Pilihan Wrapping</p>
+              <div className="flex flex-wrap gap-2">
                 {BOUQUET_COLORS.map((c) => (
                   <button
                     key={c.name}
                     type="button"
                     onClick={() => setWrap(c.name)}
                     className={cn(
-                      "flex items-center gap-2 px-3 h-10 rounded-full border text-xs font-medium transition-all shrink-0",
+                      "flex items-center gap-2 px-3.5 h-10 rounded-full border text-xs font-medium transition-all",
                       wrap === c.name
                         ? "border-blush-500 bg-blush-50 text-blush-700 shadow-sm"
                         : "border-blush-100 text-ink-700 hover:bg-blush-50 hover:border-blush-200"
                     )}
                   >
                     <span
-                      className="h-4 w-4 rounded-full border border-ink-900/10 shrink-0"
+                      className="h-3.5 w-3.5 rounded-full border border-ink-900/10 shrink-0"
                       style={{ background: c.hex }}
                     />
                     {c.name}
@@ -528,25 +526,23 @@ export function ProductDetail({ product }: { product: Product }) {
             </div>
 
             {/* Pilihan Pita */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-ink-700">Pilihan Pita</p>
-              {/* Mobile: horizontal swipe-scroll · Desktop: flex-wrap grid */}
-              <div className="flex gap-2 overflow-x-auto md:flex-wrap md:overflow-x-visible pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0"
-                style={{ scrollbarWidth: "none" }}>
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold text-ink-700 uppercase tracking-wide">Pilihan Pita</p>
+              <div className="flex flex-wrap gap-2">
                 {BOUQUET_COLORS.map((c) => (
                   <button
                     key={c.name}
                     type="button"
                     onClick={() => setRibbon(c.name)}
                     className={cn(
-                      "flex items-center gap-2 px-3 h-10 rounded-full border text-xs font-medium transition-all shrink-0",
+                      "flex items-center gap-2 px-3.5 h-10 rounded-full border text-xs font-medium transition-all",
                       ribbon === c.name
                         ? "border-blush-500 bg-blush-50 text-blush-700 shadow-sm"
                         : "border-blush-100 text-ink-700 hover:bg-blush-50 hover:border-blush-200"
                     )}
                   >
                     <span
-                      className="h-4 w-4 rounded-full border border-ink-900/10 shrink-0"
+                      className="h-3.5 w-3.5 rounded-full border border-ink-900/10 shrink-0"
                       style={{ background: c.hex }}
                     />
                     {c.name}
@@ -556,8 +552,8 @@ export function ProductDetail({ product }: { product: Product }) {
             </div>
 
             {/* Metode Pesanan */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-ink-700">Metode Pesanan</p>
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold text-ink-700 uppercase tracking-wide">Metode Pesanan</p>
               <div className="flex rounded-2xl border border-blush-100 bg-blush-50/40 p-1 gap-1">
                 {([
                   { value: "diantar", label: "Diantar" },
@@ -603,26 +599,26 @@ export function ProductDetail({ product }: { product: Product }) {
       </section>
 
       {/* Mobile sticky CTA — 2 buttons side by side */}
-      <div className="md:hidden fixed bottom-20 left-0 right-0 z-40 px-4">
-        <div className="flex gap-2.5">
+      <div className="md:hidden fixed bottom-[72px] left-0 right-0 z-40 px-3">
+        <div className="bg-white/95 backdrop-blur-xl border border-blush-100/60 shadow-[0_-4px_24px_-4px_rgba(154,70,92,0.12),0_0_0_1px_rgba(255,209,220,0.3)] rounded-3xl p-2.5 flex gap-2.5">
           {/* CART FEATURE START */}
           <Button
             variant="secondary"
             onClick={handleAddToCart}
             disabled={soldOut}
-            className="flex-1 h-12 rounded-2xl text-sm"
+            className="flex-1 h-12 text-[13px] font-semibold"
           >
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="h-[18px] w-[18px]" />
             Keranjang
           </Button>
           {/* CART FEATURE END */}
           <Button
             onClick={() => setOpen(true)}
             disabled={soldOut}
-            className="flex-1 h-12 rounded-2xl text-sm"
+            className="flex-1 h-12 text-[13px] font-semibold"
           >
-            <ShoppingBag className="h-4 w-4" />
-            {soldOut ? "Sold Out" : "Beli Sekarang"}
+            <ShoppingBag className="h-[18px] w-[18px]" />
+            {soldOut ? "Sold Out" : "Pesan Sekarang"}
           </Button>
         </div>
       </div>
