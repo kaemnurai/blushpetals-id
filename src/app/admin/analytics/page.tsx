@@ -204,7 +204,7 @@ async function fetchOrdersSafe(
     .select(sel)
     .order("created_at", { ascending: false });
   if (!error) {
-    return ((data ?? []) as Record<string, unknown>[]).map(r => ({
+    return (data ?? []).map((r: any) => ({
       id:            String(r.id ?? ""),
       status:        String(r.status ?? ""),
       total_price:   Number(r.total_price ?? 0),
@@ -213,7 +213,7 @@ async function fetchOrdersSafe(
       customer_name: String(r.customer_name ?? ""),
       whatsapp:      String(r.whatsapp ?? ""),
       wrapping:      String(r.wrapping ?? ""),
-      pickup_date:   (r.pickup_date as string | null) ?? null,
+      pickup_date:   r.pickup_date ?? null,
     }));
   }
   const msg = error.message ?? "";
@@ -233,7 +233,7 @@ async function fetchItemsSafe(
     : "order_id, product_id, quantity, price, products(title, image)";
   const { data, error } = await supabase.from("order_items").select(sel);
   if (!error) {
-    return ((data ?? []) as Record<string, unknown>[]).map(r => {
+    return (data ?? []).map((r: any) => {
       const prod = r.products as Record<string, unknown> | null;
       return {
         order_id:      String(r.order_id ?? ""),

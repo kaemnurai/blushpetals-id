@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\kaemn\\\\OneDrive\\\\Desktop\\\\PROJECTS\\\\blushpetals-id\\\\.next\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Done\")"
+    ]
+  }
+}
