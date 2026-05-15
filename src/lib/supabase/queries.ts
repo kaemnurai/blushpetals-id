@@ -16,6 +16,14 @@ function requireClient() {
 // DB stores the product name as `title`; we expose it as `name` so
 // all existing frontend components work without modification.
 
+// Strips admin-only fields before passing a Product to public pages.
+// capital_price must NEVER be sent to the browser (customer-facing JS).
+function toPublicProduct(product: Product): Product {
+  const p = { ...product };
+  delete p.capital_price;
+  return p;
+}
+
 export function rowToProduct(row: Record<string, unknown>): Product {
   return {
     id:              String(row.id ?? ""),
@@ -23,6 +31,7 @@ export function rowToProduct(row: Record<string, unknown>): Product {
     slug:            String(row.slug ?? ""),
     description:     String(row.description ?? ""),
     price:           Number(row.price ?? 0),
+    capital_price:   Number(row.capital_price ?? 0),
     category:        (row.category as ProductCategory) ?? "artificial-bouquet",
     category_id:     (row.category_id as string | null) ?? null,
     status:          (row.status as Product["status"]) ?? "available",
@@ -53,7 +62,7 @@ export async function getHeroProduct(): Promise<Product | null> {
       .eq("is_hero_product", true)
       .single();
 
-    return data ? rowToProduct(data as Record<string, unknown>) : (DUMMY_PRODUCTS[0] ?? null);
+    return data ? toPublicProduct(rowToProduct(data as Record<string, unknown>)) : (DUMMY_PRODUCTS[0] ?? null);
   } catch {
     return DUMMY_PRODUCTS[0] ?? null;
   }
@@ -76,7 +85,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
 
     if (error) throw error;
     if (!data || data.length === 0) return getDummyFeatured();
-    return (data as Record<string, unknown>[]).map(rowToProduct);
+    return (data as Record<string, unknown>[]).map(rowToProduct).map(toPublicProduct);
   } catch {
     return getDummyFeatured();
   }
@@ -100,7 +109,7 @@ export async function getProducts(category?: ProductCategory): Promise<Product[]
     if (!data || data.length === 0) {
       return category ? DUMMY_PRODUCTS.filter((p) => p.category === category) : DUMMY_PRODUCTS;
     }
-    return (data as Record<string, unknown>[]).map(rowToProduct);
+    return (data as Record<string, unknown>[]).map(rowToProduct).map(toPublicProduct);
   } catch {
     return category ? DUMMY_PRODUCTS.filter((p) => p.category === category) : DUMMY_PRODUCTS;
   }
@@ -121,7 +130,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
     if (error || !data) return getDummyBySlug(slug) ?? null;
 
-    const product = rowToProduct(data as Record<string, unknown>);
+    const product = toPublicProduct(rowToProduct(data as Record<string, unknown>));
 
     // Attach gallery images (max 3 slots, ordered by sort_order)
     const { data: imgs } = await sb

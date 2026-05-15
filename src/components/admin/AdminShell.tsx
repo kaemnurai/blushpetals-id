@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingCart, BarChart3,
-  LogOut, ExternalLink, MoreHorizontal, X,
+  LogOut, ExternalLink, MoreHorizontal, X, Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,10 +16,11 @@ interface ShellProps {
 }
 
 const NAV = [
-  { label: "Dashboard", href: "/admin",           icon: LayoutDashboard },
-  { label: "Produk",    href: "/admin/produk",    icon: Package },
-  { label: "Pesanan",   href: "/admin/orders",    icon: ShoppingCart },
-  { label: "Analitik",  href: "/admin/analytics", icon: BarChart3 },
+  { label: "Dashboard",  href: "/admin",            icon: LayoutDashboard },
+  { label: "Produk",     href: "/admin/produk",     icon: Package },
+  { label: "Pesanan",    href: "/admin/orders",     icon: ShoppingCart },
+  { label: "Analitik",   href: "/admin/analytics",  icon: BarChart3 },
+  { label: "Transaksi",  href: "/admin/transaksi",  icon: Receipt },
 ];
 
 export function AdminShell({ email, onSignOut, children }: ShellProps) {

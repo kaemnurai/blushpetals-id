@@ -7,11 +7,11 @@ import {
   CheckCircle2, XCircle, Clock, CheckCheck,
   MessageCircle, RefreshCw, AlertCircle, Trash2,
   MapPin, Gift, StickyNote, ShoppingBag, Truck,
-  Search, Package,
+  Search, Package, DollarSign,
 } from "lucide-react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { adminGetOrders, adminUpdateOrderStatus, adminDeleteOrder } from "@/lib/supabase/admin";
+import { adminGetOrders, adminUpdateOrderStatus, adminDeleteOrder, adminAcceptOrderWithCost } from "@/lib/supabase/admin";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ORDER_STATUS_LABEL, type Order, type OrderStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -140,9 +140,11 @@ function StatChip({
 // ── Order card (3-column POS layout) ─────────────────────────────
 
 function OrderCard({
-  order, busy, onUpdateStatus, onDelete,
+  order, busy, onAccept, onReject, onUpdateStatus, onDelete,
 }: {
   order: Order; busy: string | null;
+  onAccept: (o: Order) => void;
+  onReject: (o: Order) => void;
   onUpdateStatus: (id: string, status: OrderStatus) => void;
   onDelete: (o: Order) => void;
 }) {
@@ -208,6 +210,18 @@ function OrderCard({
           <p className="text-blush-600 font-bold text-[16px] md:text-[17px] leading-none mt-0.5 mb-1">
             {formatRupiah(order.total_price)}
           </p>
+
+          {/* Extra cost badge */}
+          {(order.extra_cost ?? 0) > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100 text-[10px] font-semibold text-amber-700">
+                + Biaya tambahan {formatRupiah(order.extra_cost)}
+              </span>
+              {order.extra_cost_note && (
+                <span className="text-[10px] text-amber-600 italic">{order.extra_cost_note}</span>
+              )}
+            </div>
+          )}
 
           {/* Meta row */}
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink-400 items-center">
@@ -280,6 +294,7 @@ function OrderCard({
             <div className="flex items-center gap-1.5">
               <ActionRow
                 order={order} isBusy={isBusy}
+                onAccept={onAccept} onReject={onReject}
                 onUpdateStatus={onUpdateStatus} onDelete={onDelete}
               />
             </div>
@@ -295,6 +310,7 @@ function OrderCard({
           <div className="flex flex-col gap-1.5 w-full">
             <ActionRow
               order={order} isBusy={isBusy}
+              onAccept={onAccept} onReject={onReject}
               onUpdateStatus={onUpdateStatus} onDelete={onDelete}
               vertical
             />
@@ -314,9 +330,11 @@ function OrderCard({
 // ── Action row (shared by mobile footer + desktop right col) ──────
 
 function ActionRow({
-  order, isBusy, onUpdateStatus, onDelete, vertical = false,
+  order, isBusy, onAccept, onReject, onUpdateStatus, onDelete, vertical = false,
 }: {
   order: Order; isBusy: boolean;
+  onAccept: (o: Order) => void;
+  onReject: (o: Order) => void;
   onUpdateStatus: (id: string, status: OrderStatus) => void;
   onDelete: (o: Order) => void;
   vertical?: boolean;
@@ -327,14 +345,14 @@ function ActionRow({
       {order.status === "pending" && (
         <>
           <PosBtn
-            onClick={() => onUpdateStatus(order.id, "accepted")}
+            onClick={() => onAccept(order)}
             loading={isBusy} variant="accept" full={vertical}
           >
             <CheckCircle2 className="h-3 w-3" />
             Terima
           </PosBtn>
           <PosBtn
-            onClick={() => onUpdateStatus(order.id, "rejected")}
+            onClick={() => onReject(order)}
             loading={isBusy} variant="reject" full={vertical}
           >
             <XCircle className="h-3 w-3" />
@@ -398,6 +416,220 @@ function PosBtn({
   );
 }
 
+// ── Accept Confirmation Modal ─────────────────────────────────────
+
+function AcceptConfirmModal({
+  order, busy, onConfirm, onClose,
+}: {
+  order: Order; busy: boolean;
+  onConfirm: (extraCost: number, extraCostNote: string) => void;
+  onClose: () => void;
+}) {
+  const [hasExtraCost, setHasExtraCost] = React.useState(false);
+  const [costRaw,      setCostRaw]      = React.useState("");
+  const [costNote,     setCostNote]     = React.useState("");
+
+  const costNum = parseInt(costRaw.replace(/\D/g, ""), 10) || 0;
+
+  const formatInput = (val: string) => {
+    const digits = val.replace(/\D/g, "");
+    if (!digits) return "";
+    return new Intl.NumberFormat("id-ID").format(parseInt(digits, 10));
+  };
+
+  const handleConfirm = () => {
+    if (hasExtraCost && costNum < 0) return;
+    onConfirm(hasExtraCost ? costNum : 0, hasExtraCost ? costNote : "");
+  };
+
+  const firstItem = order.items?.[0];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-ink-900/40 backdrop-blur-sm">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl bg-white shadow-premium px-6 pt-6 pb-8 sm:pb-6">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-5 w-5 text-blue-500" />
+          </div>
+          <div>
+            <p className="font-serif text-[15px] text-ink-900">Konfirmasi Pesanan</p>
+            <p className="text-[12px] text-ink-400 mt-0.5">Apakah ada biaya tambahan untuk pesanan ini?</p>
+          </div>
+        </div>
+
+        {/* Order mini preview */}
+        <div className="mb-4 px-3 py-2.5 rounded-2xl bg-blush-50/60 border border-blush-100/60">
+          <p className="text-[13px] font-semibold text-ink-800">{order.customer_name}</p>
+          <p className="text-[11px] text-ink-400 mt-0.5 truncate">{firstItem?.product_name ?? "Produk"}</p>
+          <p className="text-[14px] font-bold text-blush-600 mt-1">{formatRupiah(order.total_price)}</p>
+        </div>
+
+        {/* Radio: no extra cost */}
+        <div className="space-y-2.5 mb-4">
+          <button
+            type="button"
+            onClick={() => setHasExtraCost(false)}
+            className={cn(
+              "w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl border text-left transition-all duration-150",
+              !hasExtraCost
+                ? "border-blue-300 bg-blue-50/50 shadow-sm"
+                : "border-blush-100 bg-white hover:border-blush-200",
+            )}
+          >
+            <div className={cn(
+              "h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+              !hasExtraCost ? "border-blue-500" : "border-blush-200",
+            )}>
+              {!hasExtraCost && <div className="h-2 w-2 rounded-full bg-blue-500" />}
+            </div>
+            <span className="text-[13px] text-ink-700">Tidak ada biaya tambahan</span>
+          </button>
+
+          {/* Radio: has extra cost */}
+          <button
+            type="button"
+            onClick={() => setHasExtraCost(true)}
+            className={cn(
+              "w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl border text-left transition-all duration-150",
+              hasExtraCost
+                ? "border-blue-300 bg-blue-50/50 shadow-sm"
+                : "border-blush-100 bg-white hover:border-blush-200",
+            )}
+          >
+            <div className={cn(
+              "h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+              hasExtraCost ? "border-blue-500" : "border-blush-200",
+            )}>
+              {hasExtraCost && <div className="h-2 w-2 rounded-full bg-blue-500" />}
+            </div>
+            <span className="text-[13px] text-ink-700">Tambah biaya lain-lain</span>
+          </button>
+        </div>
+
+        {/* Extra cost fields — shown when hasExtraCost */}
+        {hasExtraCost && (
+          <div className="space-y-3 mb-4 animate-in fade-in duration-150">
+            <div>
+              <label className="text-[10px] font-semibold text-ink-400 mb-1.5 block uppercase tracking-widest">
+                Nominal Biaya Tambahan
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-400 pointer-events-none" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={costRaw ? formatInput(costRaw) : ""}
+                  onChange={(e) => setCostRaw(e.target.value.replace(/\D/g, ""))}
+                  placeholder="0"
+                  className="w-full h-10 pl-9 pr-4 rounded-xl text-[13px] text-ink-900 bg-blush-50/50 border border-blush-100 focus:outline-none focus:border-blush-300 focus:bg-white transition-all duration-150"
+                />
+              </div>
+              {costNum > 0 && (
+                <p className="text-[11px] text-ink-400 mt-1.5">
+                  = {formatRupiah(costNum)}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-ink-400 mb-1.5 block uppercase tracking-widest">
+                Keterangan Biaya
+              </label>
+              <input
+                type="text"
+                value={costNote}
+                onChange={(e) => setCostNote(e.target.value)}
+                placeholder="Contoh: Ongkir, request custom, tambahan bunga, dll."
+                className="w-full h-10 px-3.5 rounded-xl text-[13px] text-ink-900 bg-blush-50/50 border border-blush-100 focus:outline-none focus:border-blush-300 focus:bg-white transition-all duration-150"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onClose}
+            disabled={busy}
+            className="h-9 px-4 rounded-full text-[13px] font-medium border border-blush-100 bg-white text-ink-600 hover:bg-blush-50 transition disabled:opacity-50"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={busy}
+            className="h-9 px-4 rounded-full text-[13px] font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-150 flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {busy
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <CheckCircle2 className="h-3.5 w-3.5" />}
+            Konfirmasi Terima
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Reject Confirmation Modal ──────────────────────────────────────
+
+function RejectConfirmModal({
+  order, busy, onConfirm, onClose,
+}: {
+  order: Order; busy: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const firstItem = order.items?.[0];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-ink-900/40 backdrop-blur-sm">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl bg-white shadow-premium px-6 pt-6 pb-8 sm:pb-6">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
+            <XCircle className="h-5 w-5 text-red-400" />
+          </div>
+          <div>
+            <p className="font-serif text-[15px] text-ink-900">Tolak Pesanan?</p>
+            <p className="text-[12px] text-ink-400 mt-0.5">
+              Pesanan yang ditolak tidak akan dihitung sebagai revenue.
+            </p>
+          </div>
+        </div>
+
+        {/* Order mini preview */}
+        <div className="mb-5 px-3 py-2.5 rounded-2xl bg-red-50/60 border border-red-100/60">
+          <p className="text-[13px] font-semibold text-ink-800">{order.customer_name}</p>
+          <p className="text-[11px] text-ink-400 mt-0.5 truncate">{firstItem?.product_name ?? "Produk"}</p>
+          <p className="text-[14px] font-bold text-blush-600 mt-1">{formatRupiah(order.total_price)}</p>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onClose}
+            disabled={busy}
+            className="h-9 px-4 rounded-full text-[13px] font-medium border border-blush-100 bg-white text-ink-600 hover:bg-blush-50 transition disabled:opacity-50"
+          >
+            Tidak
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={busy}
+            className="h-9 px-4 rounded-full text-[13px] font-medium bg-red-500 text-white hover:bg-red-600 transition-colors duration-150 flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Ya, Tolak Pesanan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Skeleton ──────────────────────────────────────────────────────
 
 function OrderSkeleton() {
@@ -436,6 +668,10 @@ function OrdersContent() {
   const [page,          setPage]          = React.useState(1);
   const [pendingDelete, setPendingDelete] = React.useState<Order | null>(null);
   const [deleting,      setDeleting]      = React.useState(false);
+  const [pendingAccept, setPendingAccept] = React.useState<Order | null>(null);
+  const [acceptBusy,    setAcceptBusy]    = React.useState(false);
+  const [pendingReject, setPendingReject] = React.useState<Order | null>(null);
+  const [rejectBusy,    setRejectBusy]    = React.useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -460,13 +696,21 @@ function OrdersContent() {
       .channel("admin-orders-realtime")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => load())
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" },
-        (p) => setOrders((prev) =>
-          prev.map((o) =>
-            o.id === (p.new as { id: string }).id
-              ? { ...o, status: (p.new as { status: OrderStatus }).status }
-              : o,
-          ),
-        ),
+        (p) => {
+          const n = p.new as { id: string; status: OrderStatus; extra_cost?: number; extra_cost_note?: string | null };
+          setOrders((prev) =>
+            prev.map((o) =>
+              o.id === n.id
+                ? {
+                    ...o,
+                    status:          n.status,
+                    extra_cost:      n.extra_cost      ?? o.extra_cost,
+                    extra_cost_note: n.extra_cost_note ?? o.extra_cost_note,
+                  }
+                : o,
+            ),
+          );
+        },
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -500,6 +744,44 @@ function OrdersContent() {
       toast.error(err instanceof Error ? err.message : "Gagal menghapus pesanan");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleAcceptConfirm = async (extraCost: number, extraCostNote: string) => {
+    if (!pendingAccept) return;
+    setAcceptBusy(true);
+    try {
+      await adminAcceptOrderWithCost(pendingAccept.id, extraCost, extraCostNote || null);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === pendingAccept.id
+            ? { ...o, status: "accepted", extra_cost: extraCost, extra_cost_note: extraCostNote || null }
+            : o,
+        ),
+      );
+      toast.success("Pesanan diterima!");
+      setPendingAccept(null);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Gagal menerima pesanan");
+    } finally {
+      setAcceptBusy(false);
+    }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!pendingReject) return;
+    setRejectBusy(true);
+    try {
+      await adminUpdateOrderStatus(pendingReject.id, "rejected");
+      setOrders((prev) =>
+        prev.map((o) => (o.id === pendingReject.id ? { ...o, status: "rejected" } : o)),
+      );
+      toast.success("Pesanan ditolak");
+      setPendingReject(null);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Gagal menolak pesanan");
+    } finally {
+      setRejectBusy(false);
     }
   };
 
@@ -666,6 +948,8 @@ function OrdersContent() {
               key={order.id}
               order={order}
               busy={busy}
+              onAccept={setPendingAccept}
+              onReject={setPendingReject}
               onUpdateStatus={updateStatus}
               onDelete={setPendingDelete}
             />
@@ -692,6 +976,26 @@ function OrdersContent() {
         <p className="mt-4 text-center text-[11px] text-ink-300">
           {paged.length} dari {filtered.length} pesanan
         </p>
+      )}
+
+      {/* ── Accept confirmation modal ── */}
+      {pendingAccept && (
+        <AcceptConfirmModal
+          order={pendingAccept}
+          busy={acceptBusy}
+          onConfirm={handleAcceptConfirm}
+          onClose={() => setPendingAccept(null)}
+        />
+      )}
+
+      {/* ── Reject confirmation modal ── */}
+      {pendingReject && (
+        <RejectConfirmModal
+          order={pendingReject}
+          busy={rejectBusy}
+          onConfirm={handleRejectConfirm}
+          onClose={() => setPendingReject(null)}
+        />
       )}
 
       {/* ── Delete confirmation modal ── */}

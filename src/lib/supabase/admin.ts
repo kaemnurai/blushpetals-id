@@ -36,6 +36,7 @@ export interface ProductPayload {
   slug?: string;
   description?: string;
   price: number;
+  capital_price?: number;
   category: ProductCategory;
   category_id?: string | null;
   status: ProductStatus;
@@ -62,6 +63,7 @@ function toDbRow(payload: ProductPayload, imageUrl: string) {
     slug:             (payload.slug?.trim() || slugify(payload.name)).trim(),
     description:      payload.description ?? "",
     price:            Number(payload.price) || 0,
+    capital_price:    Number(payload.capital_price) || 0,
     category:         payload.category,
     category_id:      payload.category_id ?? null,
     status:           payload.status,
@@ -74,6 +76,73 @@ function toDbRow(payload: ProductPayload, imageUrl: string) {
   };
 }
 
+type DbRow = ReturnType<typeof toDbRow>;
+
+// Detects errors caused by capital_price column not existing in DB.
+function isCapitalPriceColumnMissing(msg: string): boolean {
+  const m = (msg ?? "").toLowerCase();
+  return m.includes("capital_price");
+}
+
+const MIGRATION_ERROR_MSG =
+  "Kolom 'capital_price' belum ada di database. " +
+  "Buka Supabase Dashboard → SQL Editor, lalu jalankan file " +
+  "migration-capital-price.sql (atau migration-all.sql) untuk mengaktifkan fitur Harga Modal & Profit.";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function safeInsertProduct(supabase: any, row: DbRow): Promise<Record<string, unknown>> {
+  console.log("[Product Insert] Payload yang dikirim ke Supabase:", row);
+
+  const { data, error } = await supabase
+    .from("products")
+    .insert(row)
+    .select()
+    .single();
+
+  if (!error) {
+    if (!data) throw new Error("Insert berhasil tapi tidak ada data yang dikembalikan.");
+    return data as Record<string, unknown>;
+  }
+
+  if (isCapitalPriceColumnMissing(error.message)) {
+    console.error("[Product Insert] Kolom capital_price tidak ada di DB:", error.message);
+    throw new Error(MIGRATION_ERROR_MSG);
+  }
+
+  throw new Error(error.message);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function safeUpdateProduct(supabase: any, id: string, row: DbRow): Promise<Record<string, unknown>> {
+  console.log("[Product Update] Payload yang dikirim ke Supabase:", row);
+
+  // Step 1: run the UPDATE
+  const { error: updateError } = await supabase
+    .from("products")
+    .update(row)
+    .eq("id", id);
+
+  if (updateError) {
+    if (isCapitalPriceColumnMissing(updateError.message)) {
+      console.error("[Product Update] Kolom capital_price tidak ada di DB:", updateError.message);
+      throw new Error(MIGRATION_ERROR_MSG);
+    }
+    throw new Error(updateError.message);
+  }
+
+  // Step 2: SELECT the updated row (separate query — avoids PGRST116 issues)
+  const { data, error: selectError } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (selectError) throw new Error(selectError.message);
+  if (!data) throw new Error(`Produk dengan ID ${id} tidak ditemukan setelah update.`);
+
+  return data as Record<string, unknown>;
+}
+
 // ── Create product ────────────────────────────────────────────────
 
 export async function adminCreateProduct(
@@ -84,21 +153,13 @@ export async function adminCreateProduct(
 
   if (payload.is_featured_home) await assertFeaturedHomeSlot(null, supabase);
 
-  const imageUrls = await resolveImageSlots(imageSlots, payload.name, supabase);
+  const imageUrls  = await resolveImageSlots(imageSlots, payload.name, supabase);
   const primaryUrl = imageUrls[0] ?? "";
 
-  const { data, error } = await supabase
-    .from("products")
-    .insert(toDbRow(payload, primaryUrl))
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  const product = rowToProduct(data as Record<string, unknown>);
+  const data    = await safeInsertProduct(supabase, toDbRow(payload, primaryUrl));
+  const product = rowToProduct(data);
 
   await saveProductImages(product.id, imageUrls, supabase);
-
   if (payload.is_hero_product) await applyHeroFlag(product.id, supabase);
 
   return product;
@@ -115,22 +176,13 @@ export async function adminUpdateProduct(
 
   if (payload.is_featured_home) await assertFeaturedHomeSlot(id, supabase);
 
-  const imageUrls = await resolveImageSlots(imageSlots, payload.name, supabase);
+  const imageUrls  = await resolveImageSlots(imageSlots, payload.name, supabase);
   const primaryUrl = imageUrls[0] ?? "";
 
-  const { data, error } = await supabase
-    .from("products")
-    .update(toDbRow(payload, primaryUrl))
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  const product = rowToProduct(data as Record<string, unknown>);
+  const data    = await safeUpdateProduct(supabase, id, toDbRow(payload, primaryUrl));
+  const product = rowToProduct(data);
 
   await saveProductImages(id, imageUrls, supabase);
-
   if (payload.is_hero_product) await applyHeroFlag(id, supabase);
 
   return product;
@@ -253,6 +305,8 @@ function mapOrderRow(row: Record<string, unknown>): Order {
     greeting_card:   String(row.greeting_card ?? ""),
     status:          (row.status as OrderStatus) ?? "pending",
     total_price:     Number(row.total_price ?? 0),
+    extra_cost:      Number(row.extra_cost ?? 0),
+    extra_cost_note: (row.extra_cost_note as string | null) ?? null,
     created_at:      String(row.created_at ?? ""),
     items: ((row.order_items as Record<string, unknown>[]) ?? []).map((it) => ({
       id:           String(it.id ?? ""),
@@ -277,7 +331,7 @@ export async function adminGetOrders(status?: OrderStatus): Promise<Order[]> {
       id, customer_name, whatsapp,
       order_date, pickup_date, order_notes,
       wrapping, delivery_method, greeting_card,
-      status, total_price, created_at,
+      status, total_price, extra_cost, extra_cost_note, created_at,
       order_items ( id, product_id, quantity, price, products ( title, image ) )
     `)
     .order("created_at", { ascending: false });
@@ -296,7 +350,8 @@ export async function adminGetOrders(status?: OrderStatus): Promise<Order[]> {
     err1.message.includes("Could not find") ||
     err1.message.includes("delivery_method") ||
     err1.message.includes("greeting_card") ||
-    err1.message.includes("order_date");
+    err1.message.includes("order_date") ||
+    err1.message.includes("extra_cost");
 
   if (!isSchemaError) {
     console.error("[adminGetOrders] Error:", err1.message);
@@ -339,6 +394,33 @@ export async function adminUpdateOrderStatus(
     .update({ status })
     .eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+export async function adminAcceptOrderWithCost(
+  id: string,
+  extraCost: number,
+  extraCostNote: string | null,
+): Promise<void> {
+  const supabase = sb();
+
+  const payload: Record<string, unknown> = { status: "accepted" };
+  if (extraCost > 0) {
+    payload.extra_cost = extraCost;
+    payload.extra_cost_note = extraCostNote ?? null;
+  }
+
+  const { error } = await supabase.from("orders").update(payload).eq("id", id);
+
+  if (!error) return;
+
+  // Fallback: extra_cost column may not exist yet — just update status
+  if (error.message.includes("extra_cost") || error.message.includes("schema cache") || error.message.includes("Could not find")) {
+    const { error: err2 } = await supabase.from("orders").update({ status: "accepted" }).eq("id", id);
+    if (err2) throw new Error(err2.message);
+    return;
+  }
+
+  throw new Error(error.message);
 }
 
 export async function adminDeleteOrder(id: string): Promise<void> {

@@ -27,6 +27,8 @@ export interface Product {
   slug: string;
   description: string;
   price: number;
+  /** Harga modal (biaya produksi/beli). Hanya untuk admin — tidak tampil ke customer. */
+  capital_price?: number;
   /** Category slug — stored directly in products.category for fast filtering. */
   category: ProductCategory;
   /** FK to categories table. */
@@ -89,6 +91,10 @@ export interface Order {
   greeting_card: string;
   status: OrderStatus;
   total_price: number;
+  /** Biaya tambahan yang ditambahkan admin saat menerima pesanan (default 0). */
+  extra_cost: number;
+  /** Keterangan biaya tambahan, misal "Ongkir luar kota". */
+  extra_cost_note: string | null;
   created_at: string;
   /** Joined from order_items (not a DB column). */
   items?: OrderItem[];
@@ -138,6 +144,8 @@ export interface OrderForm {
 export interface AnalyticsSummary {
   totalOrders: number;
   totalRevenue: number;
+  totalModal: number;
+  totalProfit: number;
   ordersThisWeek: number;
   ordersThisMonth: number;
   ordersThisYear: number;

@@ -274,6 +274,15 @@ function GridCard({
           </Badge>
         </div>
         <p className="text-blush-600 text-sm font-medium mt-1.5">{formatRupiah(p.price)}</p>
+        {(p.capital_price ?? 0) > 0 && (
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            <span className="text-[10px] text-amber-600">Modal: {formatRupiah(p.capital_price!)}</span>
+            <span className="text-[10px] text-ink-300">·</span>
+            <span className="text-[10px] text-emerald-600">
+              Profit: {formatRupiah(p.price - p.capital_price!)}
+            </span>
+          </div>
+        )}
         <ProductFlags product={p} />
         <div className="mt-auto pt-2 flex gap-2">
           <button
@@ -331,10 +340,18 @@ function ListRow({
             </span>
           )}
         </div>
-        <p className="text-[11px] text-ink-500 mt-0.5">
+        <p className="text-[11px] text-ink-500 mt-0.5 flex flex-wrap items-center gap-1">
           {CATEGORY_LABEL[p.category] ?? ""}
-          <span className="text-ink-300 mx-1">·</span>
+          <span className="text-ink-300">·</span>
           <span className="text-blush-600 font-medium">{formatRupiah(p.price)}</span>
+          {(p.capital_price ?? 0) > 0 && (
+            <>
+              <span className="text-ink-300">·</span>
+              <span className="text-amber-600">Modal {formatRupiah(p.capital_price!)}</span>
+              <span className="text-ink-300">·</span>
+              <span className="text-emerald-600">Profit {formatRupiah(p.price - p.capital_price!)}</span>
+            </>
+          )}
         </p>
       </div>
       <Badge
@@ -601,10 +618,12 @@ export function ProductsTable() {
         {editing && (
           <ProductForm
             initial={editing}
-            onSaved={() => {
+            onSaved={(saved) => {
               setEditing(null);
+              // Immediately update this product in the list (instant feedback)
+              setItems((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
+              // Then hard-refetch the page from DB (ensures DB sync)
               revalidateProductPages().catch(() => {});
-              // Reload current page to reflect updated data
               load(currentPage, activeFilter, debouncedQ);
             }}
             onCancel={() => setEditing(null)}

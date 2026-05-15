@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
-import { Loader2, ImagePlus, X } from "lucide-react";
+import { Loader2, ImagePlus, X, TrendingUp } from "lucide-react";
 import { Field, Input, Select, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import type { Product, ProductCategory, StockStatus, ProductStatus } from "@/lib/types";
@@ -15,7 +15,7 @@ import {
   type ProductPayload,
   type ImageSlotInput,
 } from "@/lib/supabase/admin";
-import { cn, slugify } from "@/lib/utils";
+import { cn, slugify, formatRupiah } from "@/lib/utils";
 
 interface Props {
   initial?: Product | null;
@@ -28,6 +28,7 @@ interface FormState {
   slug: string;
   category: ProductCategory;
   price: number;
+  capital_price: number;
   description: string;
   badge: string;
   stock_status: StockStatus;
@@ -41,6 +42,7 @@ const EMPTY: FormState = {
   slug:             "",
   category:         "artificial-bouquet",
   price:            0,
+  capital_price:    0,
   description:      "",
   badge:            "",
   stock_status:     "tersedia",
@@ -72,6 +74,7 @@ export function ProductForm({ initial, onSaved, onCancel }: Props) {
     slug:             initial?.slug ?? "",
     category:         initial?.category ?? "artificial-bouquet",
     price:            initial?.price ?? 0,
+    capital_price:    initial?.capital_price ?? 0,
     description:      initial?.description ?? "",
     badge:            initial?.badge ?? "",
     stock_status:     initial?.stock_status ?? "tersedia",
@@ -158,14 +161,19 @@ export function ProductForm({ initial, onSaved, onCancel }: Props) {
       name:             form.name.trim(),
       slug:             form.slug.trim() || undefined,
       description:      form.description,
-      price:            Number(form.price) || 0,
+      price:            Math.max(0, Number(form.price) || 0),
+      capital_price:    Math.max(0, Number(form.capital_price) || 0),
       category:         form.category,
       status:           form.status,
       stock_status:     form.stock_status,
       badge:            form.badge || null,
       is_hero_product:  form.is_hero_product,
       is_featured_home: form.is_featured_home,
+      // Preserve existing wrapping_options — form has no field for this, never wipe it
+      wrapping_options: initial?.wrapping_options ?? [],
     };
+
+    console.log("[ProductForm] Payload submit:", payload);
 
     const imageSlots: ImageSlotInput[] = slots.map((s) => ({
       existingUrl: s.existingUrl,
@@ -179,10 +187,17 @@ export function ProductForm({ initial, onSaved, onCancel }: Props) {
       } else {
         saved = await adminCreateProduct(payload, imageSlots);
       }
-      toast.success(initial ? "Produk diperbarui" : "Produk ditambahkan", { id: t });
+      toast.success(
+        initial
+          ? `Produk berhasil diperbarui · Rp ${payload.price.toLocaleString("id-ID")}`
+          : "Produk berhasil ditambahkan",
+        { id: t },
+      );
       onSaved(saved);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan", { id: t });
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+      console.error("[ProductForm] Save error:", msg, { initial: initial?.id, payload });
+      toast.error(msg, { id: t });
     } finally {
       setSaving(false);
     }
@@ -255,14 +270,73 @@ export function ProductForm({ initial, onSaved, onCancel }: Props) {
         </Field>
       </div>
 
-      {/* ── Price + category + stock ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Field label="Harga (IDR)" required>
+      {/* ── Price + capital_price ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="Harga Jual (IDR)" required>
           <Input
-            type="number" min={0} value={form.price}
-            onChange={(e) => update("price", Number(e.target.value))} required
+            type="number"
+            min={0}
+            step={1000}
+            value={form.price === 0 ? "" : form.price}
+            onChange={(e) => {
+              const raw = e.target.value;
+              update("price", raw === "" ? 0 : Math.max(0, Number(raw) || 0));
+            }}
+            placeholder="Contoh: 50000"
+            required
           />
         </Field>
+        <Field label="Harga Modal (IDR)" hint="Opsional · hanya tampil di admin · untuk hitung profit">
+          <Input
+            type="number"
+            min={0}
+            step={1000}
+            value={form.capital_price === 0 ? "" : form.capital_price}
+            onChange={(e) => {
+              const raw = e.target.value;
+              update("capital_price", raw === "" ? 0 : Math.max(0, Number(raw) || 0));
+            }}
+            placeholder="Kosongkan jika tidak ada"
+          />
+        </Field>
+      </div>
+
+      {/* ── Live profit preview ── */}
+      {form.price > 0 && (
+        <div className={cn(
+          "flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-3 rounded-2xl border text-[12px]",
+          form.capital_price > 0 && form.price > form.capital_price
+            ? "bg-emerald-50/60 border-emerald-100/80"
+            : form.capital_price > 0
+            ? "bg-red-50/60 border-red-100/80"
+            : "bg-blush-50/40 border-blush-100/60",
+        )}>
+          <span className="flex items-center gap-1 text-ink-600">
+            <span className="text-[10px] text-ink-400 uppercase tracking-wider">Harga Jual</span>
+            <span className="font-semibold text-blush-600">{formatRupiah(form.price)}</span>
+          </span>
+          {form.capital_price > 0 && (
+            <>
+              <span className="text-ink-300 hidden sm:inline">–</span>
+              <span className="flex items-center gap-1 text-ink-600">
+                <span className="text-[10px] text-ink-400 uppercase tracking-wider">Modal</span>
+                <span className="font-semibold text-amber-700">{formatRupiah(form.capital_price)}</span>
+              </span>
+              <span className="text-ink-300 hidden sm:inline">=</span>
+              <span className="flex items-center gap-1.5 ml-auto">
+                <TrendingUp className={cn("h-3.5 w-3.5", form.price > form.capital_price ? "text-emerald-500" : "text-red-400")} />
+                <span className={cn("font-bold text-[13px]", form.price > form.capital_price ? "text-emerald-700" : "text-red-500")}>
+                  {formatRupiah(form.price - form.capital_price)}
+                </span>
+                <span className={cn("text-[10px]", form.price > form.capital_price ? "text-emerald-500" : "text-red-400")}>
+                  ({Math.round(((form.price - form.capital_price) / form.price) * 100)}%)
+                </span>
+              </span>
+            </>
+          )}
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Field label="Kategori" required>
           <Select value={form.category} onChange={(e) => update("category", e.target.value as ProductCategory)}>
             {Object.entries(CATEGORY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}

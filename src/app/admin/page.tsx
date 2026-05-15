@@ -168,9 +168,10 @@ function Dashboard() {
     if (!supabase) return;
     const ch = supabase
       .channel("admin-dashboard-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => load())
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, () => load())
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "orders" }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" },   () => load())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" },   () => load())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "orders" },   () => load())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "products" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [load]);
