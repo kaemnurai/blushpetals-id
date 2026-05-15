@@ -43,6 +43,14 @@ const CATEGORIES: {
     fallback: "https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=900&auto=format&fit=crop&q=80",
     accent:   "from-blush-400/20 to-blush-800/55",
   },
+  {
+    key:      "custom",
+    label:    "Custom",
+    desc:     "Desain bouquet sesuai keinginanmu",
+    href:     "/katalog?cat=custom",
+    fallback: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&auto=format&fit=crop&q=80",
+    accent:   "from-blush-300/25 to-blush-700/60",
+  },
 ];
 
 interface CategoriesProps {
@@ -74,7 +82,7 @@ export function Categories({ covers }: CategoriesProps) {
         </Link>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {CATEGORIES.map((c, i) => {
           // Use dynamic product image when available; otherwise fall back.
           const imgSrc = covers?.[c.key] || c.fallback;

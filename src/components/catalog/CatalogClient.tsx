@@ -30,6 +30,7 @@ const TABS: { key: "all" | ProductCategory; label: string; emoji: string }[] = [
   { key: "artificial-bouquet", label: CATEGORY_LABEL["artificial-bouquet"], emoji: "🎀" },
   { key: "premium-collection", label: CATEGORY_LABEL["premium-collection"], emoji: "✨" },
   { key: "fresh-flower", label: CATEGORY_LABEL["fresh-flower"], emoji: "🌸" },
+  { key: "custom", label: CATEGORY_LABEL["custom"], emoji: "🎨" },
 ];
 
 const PER_PAGE = 9;

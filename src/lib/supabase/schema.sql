@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS products (
   -- existing frontend filter queries.
   category         TEXT           NOT NULL DEFAULT 'artificial-bouquet'
                                   CHECK (category IN
-                                    ('artificial-bouquet','premium-collection','fresh-flower')),
+                                    ('artificial-bouquet','premium-collection','fresh-flower','custom')),
   category_id      UUID           REFERENCES categories(id) ON DELETE SET NULL,
   status           product_status NOT NULL DEFAULT 'available',
   -- General favourites flag (legacy – kept for compat)

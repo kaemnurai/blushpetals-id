@@ -7,7 +7,8 @@
 export type ProductCategory =
   | "artificial-bouquet"
   | "premium-collection"
-  | "fresh-flower";
+  | "fresh-flower"
+  | "custom";
 
 export type StockStatus = "tersedia" | "preorder" | "sold-out";
 
@@ -161,6 +162,7 @@ export const CATEGORY_LABEL: Record<ProductCategory, string> = {
   "artificial-bouquet": "Artificial Bouquet",
   "premium-collection": "Premium Collection",
   "fresh-flower":       "Fresh Flower Collection",
+  "custom":             "Custom",
 };
 
 export const STATUS_LABEL: Record<StockStatus, string> = {

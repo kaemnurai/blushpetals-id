@@ -45,6 +45,7 @@ const FILTER_CHIPS: { label: string; value: FilterType }[] = [
   { label: "Artificial", value: "artificial-bouquet" },
   { label: "Premium", value: "premium-collection" },
   { label: "Fresh Flower", value: "fresh-flower" },
+  { label: "Custom", value: "custom" },
   { label: "Tersedia", value: "tersedia" },
   { label: "Pre-order", value: "preorder" },
   { label: "Sold Out", value: "sold-out" },
