@@ -183,7 +183,7 @@ export function OrderModal({
       title={`Pesan ${product.name}`}
       description="Isi data di bawah, pesanan akan dikirim via WhatsApp."
     >
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} className="w-full space-y-3.5">
 
         {/* Identitas */}
         <Field label="Nama Pemesan" required htmlFor="name">
@@ -207,25 +207,34 @@ export function OrderModal({
           />
         </Field>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Field label="Tanggal Pesan" required htmlFor="orderDate">
-            <Input
-              id="orderDate"
-              type="date"
-              value={form.orderDate}
-              onChange={(e) => update("orderDate", e.target.value)}
-              required
-            />
-          </Field>
-          <Field label="Tgl. Pengambilan" required htmlFor="pickupDate">
-            <Input
-              id="pickupDate"
-              type="date"
-              value={form.pickupDate}
-              onChange={(e) => update("pickupDate", e.target.value)}
-              required
-            />
-          </Field>
+        {/*
+          Flex-col selalu vertical di mobile.
+          Flex-row hanya di desktop (md+) saat modal cukup lebar.
+          min-w-0 di setiap wrapper mencegah date input meluap dari container.
+        */}
+        <div className="flex flex-col gap-4 md:flex-row">
+          <div className="w-full min-w-0">
+            <Field label="Tanggal Pesan" required htmlFor="orderDate">
+              <Input
+                id="orderDate"
+                type="date"
+                value={form.orderDate}
+                onChange={(e) => update("orderDate", e.target.value)}
+                required
+              />
+            </Field>
+          </div>
+          <div className="w-full min-w-0">
+            <Field label="Tgl. Pengambilan" required htmlFor="pickupDate">
+              <Input
+                id="pickupDate"
+                type="date"
+                value={form.pickupDate}
+                onChange={(e) => update("pickupDate", e.target.value)}
+                required
+              />
+            </Field>
+          </div>
         </div>
 
         <Field label="Jenis / Nama Bunga" required htmlFor="prod">

@@ -53,7 +53,7 @@ export function Hero({ heroProduct }: { heroProduct?: Product }) {
           <motion.div variants={item}>
             <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur border border-blush-100/80 text-[11px] text-blush-700 font-medium shadow-[0_2px_10px_rgba(247,107,148,0.12)]">
               <Sparkles className="h-3 w-3 text-blush-500" />
-              Premium Florist Bandung
+              Premium Florist Rangkasbitung
             </span>
           </motion.div>
 

@@ -69,7 +69,7 @@ export function Modal({ open, onClose, title, description, children, className }
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="overflow-y-auto px-6 py-5 flex-1">{children}</div>
+            <div className="overflow-y-auto overflow-x-hidden px-6 py-5 flex-1 w-full min-w-0">{children}</div>
           </motion.div>
         </motion.div>
       )}

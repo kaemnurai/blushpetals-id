@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Heart, Flower2, Sparkles, ArrowRight } from "lucide-react";
+import { Heart, Flower2, Sparkles, ArrowRight, MapPin, MessageCircle, Instagram } from "lucide-react";
 import { quickEnquiryUrl } from "@/lib/whatsapp";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 
@@ -43,11 +43,12 @@ export default function TentangPage() {
             <div className="absolute -inset-4 bg-gradient-to-br from-blush-100/60 to-cream-200/60 rounded-[3rem] blur-2xl pointer-events-none" />
             <div className="relative aspect-square rounded-[2.5rem] overflow-hidden shadow-premium border border-white/60">
               <ImageWithFallback
-                src="https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1200&auto=format&fit=crop&q=80"
-                alt="Tentang Blush Petals"
+                src="https://vdvxlkrarllcoixcxxwd.supabase.co/storage/v1/object/public/products/1778766760588-43s6u-signature-jumbo-bloom.jpeg"
+                alt="Signature Jumbo Bloom — Blush Petals.id"
                 fill
                 sizes="(max-width: 768px) 90vw, 480px"
                 className="object-cover"
+                priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink-900/10 via-transparent to-white/5 pointer-events-none" />
             </div>
@@ -103,6 +104,94 @@ export default function TentangPage() {
               <p className="text-sm text-ink-500 leading-relaxed">{v.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Kontak */}
+      <section className="container py-12 md:py-16">
+        <div className="text-center mb-10 md:mb-12">
+          <p className="section-label mb-4">Kontak Kami</p>
+          <div className="w-8 h-[1.5px] bg-gradient-to-r from-transparent via-blush-300 to-transparent mx-auto mb-5" />
+          <h2 className="section-title">
+            Hubungi{" "}
+            <span className="italic text-blush-600">Blush Petals.id</span>
+          </h2>
+          <p className="text-sm text-ink-500 mt-3 max-w-md mx-auto leading-relaxed">
+            Kami siap membantu bouquet spesial untuk momen terbaikmu 🌸
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto items-start">
+          {/* Contact cards */}
+          <div className="space-y-4">
+            <a
+              href="https://instagram.com/blushpetals.id"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-5 rounded-3xl bg-white border border-blush-100/60 shadow-card hover:shadow-premium transition-all group"
+            >
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-pink-100 to-blush-100 flex items-center justify-center text-blush-500 shrink-0">
+                <Instagram className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-ink-400 mb-0.5">Instagram</p>
+                <p className="text-sm font-semibold text-ink-900 group-hover:text-blush-600 transition-colors">
+                  @blushpetals.id
+                </p>
+              </div>
+            </a>
+
+            <a
+              href={quickEnquiryUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-5 rounded-3xl bg-white border border-blush-100/60 shadow-card hover:shadow-premium transition-all group"
+            >
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <MessageCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-ink-400 mb-0.5">WhatsApp</p>
+                <p className="text-sm font-semibold text-ink-900 group-hover:text-emerald-600 transition-colors">
+                  081322118378
+                </p>
+              </div>
+            </a>
+
+            <div className="flex items-start gap-4 p-5 rounded-3xl bg-white border border-blush-100/60 shadow-card">
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blush-50 to-cream-100 flex items-center justify-center text-blush-500 shrink-0 mt-0.5">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-ink-400 mb-0.5">Alamat</p>
+                <p className="text-sm font-semibold text-ink-900 leading-snug">
+                  Sharia Green Valley 2, Ona, Rangkasbitung
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Map */}
+          <div className="rounded-3xl overflow-hidden border border-blush-100/60 shadow-card">
+            <div className="relative h-64 md:h-72 w-full">
+              <iframe
+                src="https://maps.google.com/maps?q=Sharia+Green+Valley+2+Ona+Rangkasbitung&output=embed&hl=id"
+                className="absolute inset-0 w-full h-full border-0"
+                loading="lazy"
+                title="Lokasi Blush Petals.id"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+            <a
+              href="https://share.google/JlY8rQc8GIfTUxhwQ"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-blush-50 to-cream-50 hover:from-blush-100 hover:to-cream-100 transition-colors border-t border-blush-100/60 text-sm font-medium text-blush-600 hover:text-blush-700"
+            >
+              <MapPin className="h-4 w-4 shrink-0" />
+              Buka Lokasi di Google Maps
+            </a>
+          </div>
         </div>
       </section>
 
