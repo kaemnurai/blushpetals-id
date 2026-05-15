@@ -90,6 +90,7 @@ export function OrderModal({
   initialMethod,
 }: OrderModalProps) {
   const [submitting, setSubmitting] = React.useState(false);
+  const [waFallbackUrl, setWaFallbackUrl] = React.useState<string | null>(null);
   const [form, setForm] = React.useState<OrderForm>({
     customerName: "",
     whatsapp: "",
@@ -103,9 +104,12 @@ export function OrderModal({
     method: initialMethod ?? "ambil",
   });
 
-  // Sync selections from ProductDetail every time the modal opens
+  // Sync selections from ProductDetail every time the modal opens; clear fallback on close
   React.useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setWaFallbackUrl(null);
+      return;
+    }
     setForm((f) => ({
       ...f,
       productName:   product.name,
@@ -130,21 +134,38 @@ export function OrderModal({
     }
 
     setSubmitting(true);
+    setWaFallbackUrl(null);
+
+    // Build WA URL synchronously — must happen before any await
+    const msg = buildOrderMessage(form);
+    const url = buildWhatsAppUrl(msg);
+    console.log("[OrderModal] Payload submit:", {
+      customer: form.customerName,
+      product:  product.name,
+      price:    product.price,
+      method:   form.method,
+    });
+    console.log("[OrderModal] Generated WA URL:", url);
+
+    // Open WhatsApp BEFORE any await.
+    // Browsers revoke the user-gesture token after the first await, blocking window.open.
+    const waWindow = window.open(url, "_blank");
+    const wasBlocked = !waWindow || waWindow.closed;
+    console.log("[OrderModal] window.open:", wasBlocked ? "BLOCKED by browser" : "OK");
+
     try {
-      console.log("[OrderModal] Menyimpan pesanan ke database…", {
-        customer: form.customerName,
-        product: product.name,
-        price: product.price,
-      });
-
       const orderId = await createOrder(form, product);
-      console.log("[OrderModal] Pesanan berhasil disimpan. ID:", orderId);
+      console.log("[OrderModal] Pesanan tersimpan. Order ID:", orderId);
+      console.log("[OrderModal] Order items tersimpan untuk product_id:", product.id);
 
-      const msg = buildOrderMessage(form);
-      const url = buildWhatsAppUrl(msg);
-      window.open(url, "_blank");
-      toast.success("Pesanan berhasil disimpan! Mengarahkan ke WhatsApp…");
-      onClose();
+      if (wasBlocked) {
+        // Order saved but WA popup was blocked — keep modal open, show manual button
+        setWaFallbackUrl(url);
+        toast.error("WhatsApp gagal dibuka otomatis. Klik tombol di bawah untuk membuka manual.");
+      } else {
+        toast.success("Pesanan berhasil disimpan! Mengarahkan ke WhatsApp…");
+        onClose();
+      }
     } catch (err: unknown) {
       console.error("[OrderModal] Gagal menyimpan pesanan:", err);
       toast.error(
@@ -186,7 +207,7 @@ export function OrderModal({
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Tanggal Pesan" required htmlFor="orderDate">
             <Input
               id="orderDate"
@@ -285,6 +306,21 @@ export function OrderModal({
             <Send className="h-4 w-4" />
             {submitting ? "Mengirim…" : "Kirim Pesanan via WhatsApp"}
           </Button>
+
+          {/* Fallback: muncul hanya jika popup diblokir browser */}
+          {waFallbackUrl && (
+            <a
+              href={waFallbackUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => { setWaFallbackUrl(null); onClose(); }}
+              className="flex items-center justify-center gap-2 w-full h-11 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white text-sm font-semibold transition-colors"
+            >
+              <Send className="h-4 w-4" />
+              Buka WhatsApp Manual
+            </a>
+          )}
+
           <Button type="button" variant="ghost" onClick={onClose}>
             Batal
           </Button>

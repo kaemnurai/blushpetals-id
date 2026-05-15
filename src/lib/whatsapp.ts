@@ -26,7 +26,9 @@ export function buildOrderMessage(form: OrderForm, orderId?: string): string {
 }
 
 export function buildWhatsAppUrl(message: string, phone?: string): string {
-  const num = (phone ?? SITE.whatsapp).replace(/[^0-9]/g, "");
+  let num = (phone ?? SITE.whatsapp).replace(/[^0-9]/g, "");
+  // Normalize Indonesian numbers: 08xxx → 628xxx
+  if (num.startsWith("0")) num = "62" + num.slice(1);
   return `https://wa.me/${num}?text=${encodeURIComponent(message)}`;
 }
 
