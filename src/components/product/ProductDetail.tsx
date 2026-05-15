@@ -8,7 +8,7 @@ import {
   Share2, MessageCircle, Camera, Send,
   Link2, X, ExternalLink, CheckCircle2, Smartphone,
   // CART FEATURE START
-  Minus, Plus, ShoppingCart,
+  ShoppingCart,
   // CART FEATURE END
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -276,9 +276,11 @@ function ShareModal({
 function ShareButton({
   product,
   size = "lg",
+  iconOnly = false,
 }: {
   product: Product;
   size?: "md" | "lg";
+  iconOnly?: boolean;
 }) {
   const [modalOpen, setModalOpen] = React.useState(false);
 
@@ -289,15 +291,26 @@ function ShareButton({
 
   return (
     <>
-      <Button
-        variant="secondary"
-        size={size}
-        onClick={() => setModalOpen(true)}
-        aria-label="Share produk"
-      >
-        <Share2 className="h-4 w-4" />
-        Share
-      </Button>
+      {iconOnly ? (
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          aria-label="Share produk"
+          className="h-9 w-9 rounded-full bg-blush-50 border border-blush-100 flex items-center justify-center text-blush-500 hover:bg-blush-100 hover:text-blush-600 transition"
+        >
+          <Share2 className="h-4 w-4" />
+        </button>
+      ) : (
+        <Button
+          variant="secondary"
+          size={size}
+          onClick={() => setModalOpen(true)}
+          aria-label="Share produk"
+        >
+          <Share2 className="h-4 w-4" />
+          Share
+        </Button>
+      )}
 
       {modalOpen && (
         <ShareModal
@@ -390,7 +403,6 @@ export function ProductDetail({ product }: { product: Product }) {
   const [deliveryMethod, setDeliveryMethod] = React.useState<"ambil" | "diantar">("ambil");
   const [showThankYou, setShowThankYou] = React.useState(false);
   // CART FEATURE START
-  const [qty, setQty] = React.useState(1);
   const { addItem } = useCart();
 
   const handleAddToCart = React.useCallback(() => {
@@ -401,10 +413,10 @@ export function ProductDetail({ product }: { product: Product }) {
       image:       product.image ?? "",
       wrapping:    wrap,
       ribbon,
-      quantity:    qty,
+      quantity:    1,
     });
     toast.success(`${product.name} ditambahkan ke keranjang 🛒`);
-  }, [addItem, product, wrap, ribbon, qty]);
+  }, [addItem, product, wrap, ribbon]);
   // CART FEATURE END
 
   // Detect user returning from WhatsApp via visibilitychange
@@ -468,13 +480,19 @@ export function ProductDetail({ product }: { product: Product }) {
               </Badge>
             </div>
 
-            <div>
-              <h1 className="font-serif text-3xl md:text-4xl text-ink-900">
-                {product.name}
-              </h1>
-              <p className="text-2xl md:text-3xl text-blush-600 font-medium mt-2">
-                {formatRupiah(product.price)}
-              </p>
+            <div className="flex items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <h1 className="font-serif text-3xl md:text-4xl text-ink-900">
+                  {product.name}
+                </h1>
+                <p className="text-2xl md:text-3xl text-blush-600 font-medium mt-2">
+                  {formatRupiah(product.price)}
+                </p>
+              </div>
+              {/* Share icon — mobile only, positioned beside title */}
+              <div className="md:hidden shrink-0 mt-1">
+                <ShareButton product={product} iconOnly />
+              </div>
             </div>
 
             <p className="text-sm text-ink-700 leading-relaxed">
@@ -484,17 +502,20 @@ export function ProductDetail({ product }: { product: Product }) {
             {/* Pilihan Wrapping */}
             <div className="space-y-2">
               <p className="text-xs font-medium text-ink-700">Pilihan Wrapping</p>
-              <div className="flex flex-wrap gap-2">
+              {/* Mobile: horizontal swipe-scroll · Desktop: flex-wrap grid */}
+              <div className="flex gap-2 overflow-x-auto md:flex-wrap md:overflow-x-visible pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0"
+                style={{ scrollbarWidth: "none" }}>
                 {BOUQUET_COLORS.map((c) => (
                   <button
                     key={c.name}
                     type="button"
                     onClick={() => setWrap(c.name)}
-                    className={`flex items-center gap-2 px-3 h-10 rounded-full border text-xs font-medium transition-all ${
+                    className={cn(
+                      "flex items-center gap-2 px-3 h-10 rounded-full border text-xs font-medium transition-all shrink-0",
                       wrap === c.name
                         ? "border-blush-500 bg-blush-50 text-blush-700 shadow-sm"
                         : "border-blush-100 text-ink-700 hover:bg-blush-50 hover:border-blush-200"
-                    }`}
+                    )}
                   >
                     <span
                       className="h-4 w-4 rounded-full border border-ink-900/10 shrink-0"
@@ -509,17 +530,20 @@ export function ProductDetail({ product }: { product: Product }) {
             {/* Pilihan Pita */}
             <div className="space-y-2">
               <p className="text-xs font-medium text-ink-700">Pilihan Pita</p>
-              <div className="flex flex-wrap gap-2">
+              {/* Mobile: horizontal swipe-scroll · Desktop: flex-wrap grid */}
+              <div className="flex gap-2 overflow-x-auto md:flex-wrap md:overflow-x-visible pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0"
+                style={{ scrollbarWidth: "none" }}>
                 {BOUQUET_COLORS.map((c) => (
                   <button
                     key={c.name}
                     type="button"
                     onClick={() => setRibbon(c.name)}
-                    className={`flex items-center gap-2 px-3 h-10 rounded-full border text-xs font-medium transition-all ${
+                    className={cn(
+                      "flex items-center gap-2 px-3 h-10 rounded-full border text-xs font-medium transition-all shrink-0",
                       ribbon === c.name
                         ? "border-blush-500 bg-blush-50 text-blush-700 shadow-sm"
                         : "border-blush-100 text-ink-700 hover:bg-blush-50 hover:border-blush-200"
-                    }`}
+                    )}
                   >
                     <span
                       className="h-4 w-4 rounded-full border border-ink-900/10 shrink-0"
@@ -555,38 +579,6 @@ export function ProductDetail({ product }: { product: Product }) {
               </div>
             </div>
 
-            {/* CART FEATURE START */}
-            {/* Quantity selector */}
-            <div className="flex items-center gap-3 pt-1">
-              <span className="text-xs font-medium text-ink-700">Jumlah</span>
-              <div className="flex items-center gap-2 rounded-2xl border border-blush-100 bg-blush-50/40 px-1 py-1">
-                <button
-                  type="button"
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  disabled={qty <= 1}
-                  className="h-8 w-8 rounded-xl flex items-center justify-center text-ink-600 hover:bg-white hover:text-blush-600 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                >
-                  <Minus className="h-3.5 w-3.5" />
-                </button>
-                <span className="w-7 text-center text-sm font-semibold text-ink-900 select-none">
-                  {qty}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQty((q) => q + 1)}
-                  className="h-8 w-8 rounded-xl flex items-center justify-center text-ink-600 hover:bg-white hover:text-blush-600 transition"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              {qty > 1 && (
-                <span className="text-xs text-blush-600 font-medium">
-                  = {formatRupiah(product.price * qty)}
-                </span>
-              )}
-            </div>
-            {/* CART FEATURE END */}
-
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3 pt-2 flex-wrap">
               {/* CART FEATURE START */}
@@ -610,34 +602,27 @@ export function ProductDetail({ product }: { product: Product }) {
         </div>
       </section>
 
-      {/* Mobile sticky CTA */}
-      <div className="md:hidden fixed bottom-20 left-0 right-0 z-40 px-3 safe-bottom">
-        <div className="mx-1 rounded-3xl glass shadow-soft p-3 flex items-center gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-ink-500">Harga</p>
-            <p className="font-serif text-sm text-ink-900">
-              {qty > 1 ? formatRupiah(product.price * qty) : formatRupiah(product.price)}
-            </p>
-          </div>
+      {/* Mobile sticky CTA — 2 buttons side by side */}
+      <div className="md:hidden fixed bottom-20 left-0 right-0 z-40 px-4">
+        <div className="flex gap-2.5">
           {/* CART FEATURE START */}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={handleAddToCart}
             disabled={soldOut}
-            className="h-10 w-10 shrink-0 rounded-full bg-blush-50 text-blush-600 hover:bg-blush-100 flex items-center justify-center transition disabled:opacity-40"
-            aria-label="Masukkan Keranjang"
+            className="flex-1 h-12 rounded-2xl text-sm"
           >
             <ShoppingCart className="h-4 w-4" />
-          </button>
+            Keranjang
+          </Button>
           {/* CART FEATURE END */}
-          <ShareButton product={product} size="md" />
           <Button
             onClick={() => setOpen(true)}
             disabled={soldOut}
-            className="flex-shrink-0"
+            className="flex-1 h-12 rounded-2xl text-sm"
           >
             <ShoppingBag className="h-4 w-4" />
-            {soldOut ? "Sold Out" : "Pesan"}
+            {soldOut ? "Sold Out" : "Beli Sekarang"}
           </Button>
         </div>
       </div>
@@ -649,9 +634,6 @@ export function ProductDetail({ product }: { product: Product }) {
         initialWrap={wrap}
         initialRibbon={ribbon}
         initialMethod={deliveryMethod}
-        // CART FEATURE START
-        initialQty={qty}
-        // CART FEATURE END
       />
 
       <AnimatePresence>
