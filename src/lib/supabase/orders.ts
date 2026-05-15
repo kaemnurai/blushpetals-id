@@ -13,7 +13,7 @@
  */
 
 import { getSupabaseBrowserClient } from "./client";
-import type { OrderForm, Product } from "@/lib/types";
+import type { OrderForm, Product, CartItem, CartOrderForm } from "@/lib/types";
 
 // Helper: detect "column not found in schema cache" errors
 function isMissingColumnError(msg: string): boolean {
@@ -60,7 +60,9 @@ export async function createOrder(form: OrderForm, product: Product): Promise<st
   if (!err1) {
     const orderId = order1.id as string;
     console.log("[createOrder] Full insert sukses. ID:", orderId);
-    await insertOrderItem(supabase, orderId, product);
+    // CART FEATURE START
+    await insertOrderItem(supabase, orderId, product, form.quantity ?? 1);
+    // CART FEATURE END
     return orderId;
   }
 
@@ -110,7 +112,9 @@ export async function createOrder(form: OrderForm, product: Product): Promise<st
   const orderId = order2.id as string;
   console.log("[createOrder] Fallback insert sukses. ID:", orderId);
 
-  await insertOrderItem(supabase, orderId, product);
+  // CART FEATURE START
+  await insertOrderItem(supabase, orderId, product, form.quantity ?? 1);
+  // CART FEATURE END
   return orderId;
 }
 
@@ -121,11 +125,16 @@ async function insertOrderItem(
   supabase: any,
   orderId: string,
   product: Product,
+  // CART FEATURE START
+  quantity = 1,
+  // CART FEATURE END
 ): Promise<void> {
   const { error } = await supabase.from("order_items").insert({
     order_id:   orderId,
     product_id: product.id,
-    quantity:   1,
+    // CART FEATURE START
+    quantity,
+    // CART FEATURE END
     price:      product.price,
   });
 
@@ -136,3 +145,61 @@ async function insertOrderItem(
 
   console.log("[createOrder] Order item tersimpan. product_id:", product.id);
 }
+
+// CART FEATURE START
+
+export async function createCartOrder(
+  form: CartOrderForm,
+  items: CartItem[],
+): Promise<string> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Layanan database tidak tersedia.");
+
+  const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const productSummary = items
+    .map((i, idx) => `${idx + 1}. ${i.productName} x${i.quantity}`)
+    .join(" | ");
+  const noteParts = [
+    form.note?.trim() || "",
+    `Produk: ${productSummary}`,
+    form.cardMessage?.trim() ? `Kartu: ${form.cardMessage.trim()}` : "",
+  ].filter(Boolean);
+
+  const orderRow = {
+    customer_name:   form.customerName.trim(),
+    whatsapp:        form.whatsapp.trim(),
+    order_date:      form.orderDate  || null,
+    pickup_date:     form.pickupDate || null,
+    order_notes:     noteParts.join(" | "),
+    wrapping:        items.map((i) => i.wrapping).join(", "),
+    delivery_method: form.method ?? "ambil",
+    greeting_card:   form.cardMessage ?? "",
+    status:          "pending",
+    total_price:     totalPrice,
+  };
+
+  const { data: order, error: orderErr } = await supabase
+    .from("orders")
+    .insert(orderRow)
+    .select("id")
+    .single();
+
+  if (orderErr) throw new Error(`Gagal menyimpan pesanan: ${orderErr.message}`);
+
+  const orderId = order.id as string;
+
+  const orderItemsData = items.map((item) => ({
+    order_id:   orderId,
+    product_id: item.productId || null,
+    quantity:   item.quantity,
+    price:      item.price,
+  }));
+
+  const { error: itemsErr } = await supabase.from("order_items").insert(orderItemsData);
+  if (itemsErr) console.error("[createCartOrder] order_items error:", itemsErr.message);
+
+  console.log("[createCartOrder] Pesanan tersimpan. ID:", orderId, "Items:", items.length);
+  return orderId;
+}
+
+// CART FEATURE END

@@ -55,6 +55,9 @@ interface OrderModalProps {
   initialWrap?: string;
   initialRibbon?: string;
   initialMethod?: OrderForm["method"];
+  // CART FEATURE START
+  initialQty?: number;
+  // CART FEATURE END
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -68,6 +71,9 @@ export function OrderModal({
   initialWrap,
   initialRibbon,
   initialMethod,
+  // CART FEATURE START
+  initialQty = 1,
+  // CART FEATURE END
 }: OrderModalProps) {
   const [submitting, setSubmitting] = React.useState(false);
   const [form, setForm] = React.useState<OrderForm>({
@@ -76,11 +82,15 @@ export function OrderModal({
     orderDate: today(),
     pickupDate: today(),
     productName: product.name,
+    price: product.price,
     wrappingColor: initialWrap ?? BOUQUET_COLORS[0].name,
     ribbonColor: initialRibbon ?? BOUQUET_COLORS[0].name,
     cardMessage: "",
     note: "",
     method: initialMethod ?? "ambil",
+    // CART FEATURE START
+    quantity: initialQty,
+    // CART FEATURE END
   });
 
   // Reset form fully every time the modal opens
@@ -92,13 +102,17 @@ export function OrderModal({
       orderDate: today(),
       pickupDate: today(),
       productName:   product.name,
+      price:         product.price,
       wrappingColor: initialWrap   ?? BOUQUET_COLORS[0].name,
       ribbonColor:   initialRibbon ?? BOUQUET_COLORS[0].name,
       cardMessage: "",
       note: "",
       method: initialMethod ?? "ambil",
+      // CART FEATURE START
+      quantity: initialQty,
+      // CART FEATURE END
     });
-  }, [open, product.name, initialWrap, initialRibbon, initialMethod]);
+  }, [open, product.name, product.price, initialWrap, initialRibbon, initialMethod, initialQty]);
 
   const update = <K extends keyof OrderForm>(key: K, value: OrderForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }));

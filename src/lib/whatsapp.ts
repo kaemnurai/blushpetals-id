@@ -1,9 +1,12 @@
 import { SITE } from "@/lib/data/site";
-import type { OrderForm } from "@/lib/types";
+import type { OrderForm, CartItem, CartOrderForm } from "@/lib/types";
 import { formatDateID, formatRupiah } from "@/lib/utils";
 
 export function buildOrderMessage(form: OrderForm, orderId?: string): string {
   const ref = orderId ? `#${orderId.slice(-6).toUpperCase()}` : null;
+  // CART FEATURE START
+  const qtyLine = (form.quantity ?? 1) > 1 ? [`Qty             : ${form.quantity}`] : [];
+  // CART FEATURE END
   const lines = [
     "Halo Blush Petals.id 🌸",
     "",
@@ -12,6 +15,7 @@ export function buildOrderMessage(form: OrderForm, orderId?: string): string {
     `Nama            : ${form.customerName}`,
     `No WhatsApp     : ${form.whatsapp}`,
     `Produk          : ${form.productName}`,
+    ...qtyLine,
     `Harga           : ${form.price ? formatRupiah(form.price) : "-"}`,
     `Tanggal Pesan   : ${form.orderDate  ? formatDateID(form.orderDate)  : "-"}`,
     `Tanggal Ambil   : ${form.pickupDate ? formatDateID(form.pickupDate) : "-"}`,
@@ -25,6 +29,57 @@ export function buildOrderMessage(form: OrderForm, orderId?: string): string {
   ];
   return lines.join("\n");
 }
+
+// CART FEATURE START
+export function buildCartOrderMessage(
+  form: CartOrderForm,
+  items: CartItem[],
+  orderId?: string,
+): string {
+  const ref = orderId ? `#${orderId.slice(-6).toUpperCase()}` : null;
+  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  const itemLines: string[] = [];
+  items.forEach((item, idx) => {
+    itemLines.push(
+      `${idx + 1}.`,
+      `Produk   : ${item.productName}`,
+      `Qty       : ${item.quantity}`,
+      `Harga     : ${formatRupiah(item.price)}`,
+      `Subtotal  : ${formatRupiah(item.price * item.quantity)}`,
+      `Wrapping  : ${item.wrapping || "-"}`,
+      `Pita      : ${item.ribbon || "-"}`,
+      "",
+    );
+  });
+
+  const lines = [
+    "Halo Blush Petals.id 🌸",
+    "",
+    "Saya ingin memesan bouquet:",
+    ...(ref ? [`ID Pesanan: ${ref}`, ""] : [""]),
+    "======================",
+    "DAFTAR PESANAN",
+    "======================",
+    "",
+    ...itemLines,
+    "======================",
+    "",
+    `TOTAL : ${formatRupiah(total)}`,
+    "",
+    `Nama            : ${form.customerName}`,
+    `No WhatsApp     : ${form.whatsapp}`,
+    `Tanggal Pesan   : ${form.orderDate  ? formatDateID(form.orderDate)  : "-"}`,
+    `Tanggal Ambil   : ${form.pickupDate ? formatDateID(form.pickupDate) : "-"}`,
+    `Metode          : ${form.method === "diantar" ? "Diantar" : "Ambil di Toko"}`,
+    `Kartu Ucapan    : ${form.cardMessage || "-"}`,
+    `Catatan         : ${form.note || "-"}`,
+    "",
+    "Terima kasih 🌸",
+  ];
+  return lines.join("\n");
+}
+// CART FEATURE END
 
 export function buildWhatsAppUrl(message: string, phone?: string): string {
   let num = (phone ?? SITE.whatsapp).replace(/[^0-9]/g, "");

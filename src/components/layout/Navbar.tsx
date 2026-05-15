@@ -4,14 +4,20 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { ShoppingBag, Sparkles } from "lucide-react";
+import { ShoppingBag, Sparkles, ShoppingCart } from "lucide-react";
 import { NAV_ITEMS, SITE } from "@/lib/data/site";
 import { cn } from "@/lib/utils";
 import { quickEnquiryUrl } from "@/lib/whatsapp";
+// CART FEATURE START
+import { useCart } from "@/lib/cart-context";
+// CART FEATURE END
 
 export function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = React.useState(false);
+  // CART FEATURE START
+  const { totalCount, setPanelOpen } = useCart();
+  // CART FEATURE END
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -81,6 +87,24 @@ export function Navbar() {
 
         {/* CTA */}
         <div className="flex items-center gap-2">
+          {/* CART FEATURE START */}
+          <motion.button
+            type="button"
+            onClick={() => setPanelOpen(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative h-10 w-10 inline-flex items-center justify-center rounded-full bg-blush-50 text-blush-600 hover:bg-blush-100 hover:text-blush-700 transition"
+            aria-label="Keranjang"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {totalCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 rounded-full bg-blush-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                {totalCount > 99 ? "99+" : totalCount}
+              </span>
+            )}
+          </motion.button>
+          {/* CART FEATURE END */}
+
           <motion.a
             href={quickEnquiryUrl()}
             target="_blank"

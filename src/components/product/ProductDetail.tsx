@@ -7,6 +7,9 @@ import {
   ChevronLeft, ShoppingBag,
   Share2, MessageCircle, Camera, Send,
   Link2, X, ExternalLink, CheckCircle2, Smartphone,
+  // CART FEATURE START
+  Minus, Plus, ShoppingCart,
+  // CART FEATURE END
 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Product } from "@/lib/types";
@@ -17,6 +20,9 @@ import { ProductGallery } from "./ProductGallery";
 import { OrderModal } from "./OrderModal";
 import { formatRupiah, cn } from "@/lib/utils";
 import { BOUQUET_COLORS } from "@/lib/data/bouquet-colors";
+// CART FEATURE START
+import { useCart } from "@/lib/cart-context";
+// CART FEATURE END
 
 // ── Share option row ──────────────────────────────────────────────
 
@@ -383,6 +389,23 @@ export function ProductDetail({ product }: { product: Product }) {
   const [ribbon, setRibbon] = React.useState(BOUQUET_COLORS[0].name);
   const [deliveryMethod, setDeliveryMethod] = React.useState<"ambil" | "diantar">("ambil");
   const [showThankYou, setShowThankYou] = React.useState(false);
+  // CART FEATURE START
+  const [qty, setQty] = React.useState(1);
+  const { addItem } = useCart();
+
+  const handleAddToCart = React.useCallback(() => {
+    addItem({
+      productId:   product.id,
+      productName: product.name,
+      price:       product.price,
+      image:       product.image ?? "",
+      wrapping:    wrap,
+      ribbon,
+      quantity:    qty,
+    });
+    toast.success(`${product.name} ditambahkan ke keranjang 🛒`);
+  }, [addItem, product, wrap, ribbon, qty]);
+  // CART FEATURE END
 
   // Detect user returning from WhatsApp via visibilitychange
   React.useEffect(() => {
@@ -532,8 +555,51 @@ export function ProductDetail({ product }: { product: Product }) {
               </div>
             </div>
 
+            {/* CART FEATURE START */}
+            {/* Quantity selector */}
+            <div className="flex items-center gap-3 pt-1">
+              <span className="text-xs font-medium text-ink-700">Jumlah</span>
+              <div className="flex items-center gap-2 rounded-2xl border border-blush-100 bg-blush-50/40 px-1 py-1">
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  disabled={qty <= 1}
+                  className="h-8 w-8 rounded-xl flex items-center justify-center text-ink-600 hover:bg-white hover:text-blush-600 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-7 text-center text-sm font-semibold text-ink-900 select-none">
+                  {qty}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => q + 1)}
+                  className="h-8 w-8 rounded-xl flex items-center justify-center text-ink-600 hover:bg-white hover:text-blush-600 transition"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {qty > 1 && (
+                <span className="text-xs text-blush-600 font-medium">
+                  = {formatRupiah(product.price * qty)}
+                </span>
+              )}
+            </div>
+            {/* CART FEATURE END */}
+
             {/* Desktop CTA */}
-            <div className="hidden md:flex items-center gap-3 pt-2">
+            <div className="hidden md:flex items-center gap-3 pt-2 flex-wrap">
+              {/* CART FEATURE START */}
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={handleAddToCart}
+                disabled={soldOut}
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Masukkan Keranjang
+              </Button>
+              {/* CART FEATURE END */}
               <Button onClick={() => setOpen(true)} size="lg" disabled={soldOut}>
                 <ShoppingBag className="h-4 w-4" />
                 {soldOut ? "Sold Out" : "Pesan Sekarang"}
@@ -546,11 +612,24 @@ export function ProductDetail({ product }: { product: Product }) {
 
       {/* Mobile sticky CTA */}
       <div className="md:hidden fixed bottom-20 left-0 right-0 z-40 px-3 safe-bottom">
-        <div className="mx-1 rounded-3xl glass shadow-soft p-3 flex items-center gap-2.5">
+        <div className="mx-1 rounded-3xl glass shadow-soft p-3 flex items-center gap-2">
           <div className="flex-1 min-w-0">
             <p className="text-[10px] text-ink-500">Harga</p>
-            <p className="font-serif text-base text-ink-900">{formatRupiah(product.price)}</p>
+            <p className="font-serif text-sm text-ink-900">
+              {qty > 1 ? formatRupiah(product.price * qty) : formatRupiah(product.price)}
+            </p>
           </div>
+          {/* CART FEATURE START */}
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={soldOut}
+            className="h-10 w-10 shrink-0 rounded-full bg-blush-50 text-blush-600 hover:bg-blush-100 flex items-center justify-center transition disabled:opacity-40"
+            aria-label="Masukkan Keranjang"
+          >
+            <ShoppingCart className="h-4 w-4" />
+          </button>
+          {/* CART FEATURE END */}
           <ShareButton product={product} size="md" />
           <Button
             onClick={() => setOpen(true)}
@@ -570,6 +649,9 @@ export function ProductDetail({ product }: { product: Product }) {
         initialWrap={wrap}
         initialRibbon={ribbon}
         initialMethod={deliveryMethod}
+        // CART FEATURE START
+        initialQty={qty}
+        // CART FEATURE END
       />
 
       <AnimatePresence>

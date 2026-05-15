@@ -6,6 +6,9 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 import { Footer } from "@/components/layout/Footer";
 import { ToastProvider } from "@/components/layout/ToastProvider";
+// CART FEATURE START
+import { CartProviderWrapper } from "@/components/cart/CartProviderWrapper";
+// CART FEATURE END
 
 const inter = Inter({
   subsets: ["latin"],
@@ -73,12 +76,18 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${inter.variable} ${playfair.variable}`}>
       <body className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1 pb-24 md:pb-0">{children}</main>
-        <Footer />
-        <BottomNav />
-        <WhatsAppFloatingButton />
-        <ToastProvider />
+        {/* CART FEATURE START */}
+        <CartProviderWrapper>
+        {/* CART FEATURE END */}
+          <Navbar />
+          <main className="flex-1 pb-24 md:pb-0">{children}</main>
+          <Footer />
+          <BottomNav />
+          <WhatsAppFloatingButton />
+          <ToastProvider />
+        {/* CART FEATURE START */}
+        </CartProviderWrapper>
+        {/* CART FEATURE END */}
       </body>
     </html>
   );

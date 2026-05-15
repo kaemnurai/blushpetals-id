@@ -139,7 +139,36 @@ export interface OrderForm {
   cardMessage?: string;
   note?: string;
   method: "ambil" | "diantar";
+  // CART FEATURE START
+  quantity?: number;
+  // CART FEATURE END
 }
+
+// CART FEATURE START
+
+export interface CartItem {
+  /** Unique slot ID derived from productId + wrapping + ribbon. */
+  cartId: string;
+  productId: string;
+  productName: string;
+  price: number;
+  image: string;
+  wrapping: string;
+  ribbon: string;
+  quantity: number;
+}
+
+export interface CartOrderForm {
+  customerName: string;
+  whatsapp: string;
+  orderDate: string;
+  pickupDate: string;
+  cardMessage?: string;
+  note?: string;
+  method: "ambil" | "diantar";
+}
+
+// CART FEATURE END
 
 // ── Analytics ─────────────────────────────────────────────────────
 
