@@ -4,23 +4,91 @@ import * as React from "react";
 import toast from "react-hot-toast";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Select, Textarea } from "@/components/ui/Input";
+import { Field, Input, Textarea } from "@/components/ui/Input";
 import type { OrderForm, Product } from "@/lib/types";
 import { buildOrderMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { createOrder } from "@/lib/supabase/orders";
 import { Send } from "lucide-react";
+
+// ── Shared colour constants (must match ProductDetail) ────────────
+
+const WRAPPING_COLORS = [
+  { name: "Pink",          hex: "#F9B8C4" },
+  { name: "Blue",          hex: "#B8D4E8" },
+  { name: "Emerald Green", hex: "#4CAF82" },
+  { name: "Yellow",        hex: "#F9E4A0" },
+  { name: "Lilac",         hex: "#C8B4D8" },
+  { name: "Tosca",         hex: "#62C4BE" },
+  { name: "Grey",          hex: "#B8B8B8" },
+];
+
+const RIBBON_COLORS = [
+  { name: "Gold",       hex: "#D4A843" },
+  { name: "Red",        hex: "#C0392B" },
+  { name: "Baby Blue",  hex: "#89CFF0" },
+  { name: "Maroon",     hex: "#80002B" },
+  { name: "Dusty Pink", hex: "#D4A0A0" },
+  { name: "Silver",     hex: "#A8A9AD" },
+];
+
+// ── Compact pill picker used inside the modal ─────────────────────
+
+function ColorPills({
+  colors,
+  value,
+  onChange,
+}: {
+  colors: { name: string; hex: string }[];
+  value: string | undefined;
+  onChange: (name: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {colors.map((c) => (
+        <button
+          key={c.name}
+          type="button"
+          onClick={() => onChange(c.name)}
+          className={`flex items-center gap-1.5 px-2.5 h-8 rounded-full border text-xs font-medium transition-all ${
+            value === c.name
+              ? "border-blush-500 bg-blush-50 text-blush-700 shadow-sm"
+              : "border-blush-100 text-ink-600 hover:bg-blush-50 hover:border-blush-200"
+          }`}
+        >
+          <span
+            className="h-3 w-3 rounded-full border border-ink-900/10 shrink-0"
+            style={{ background: c.hex }}
+          />
+          {c.name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Props ─────────────────────────────────────────────────────────
 
 interface OrderModalProps {
   open: boolean;
   onClose: () => void;
   product: Product;
   initialWrap?: string;
-  initialNote?: string;
+  initialRibbon?: string;
+  initialMethod?: OrderForm["method"];
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function OrderModal({ open, onClose, product, initialWrap, initialNote }: OrderModalProps) {
+// ── Component ─────────────────────────────────────────────────────
+
+export function OrderModal({
+  open,
+  onClose,
+  product,
+  initialWrap,
+  initialRibbon,
+  initialMethod,
+}: OrderModalProps) {
   const [submitting, setSubmitting] = React.useState(false);
   const [form, setForm] = React.useState<OrderForm>({
     customerName: "",
@@ -28,23 +96,24 @@ export function OrderModal({ open, onClose, product, initialWrap, initialNote }:
     orderDate: today(),
     pickupDate: today(),
     productName: product.name,
-    wrappingColor: initialWrap ?? "",
+    wrappingColor: initialWrap ?? WRAPPING_COLORS[0].name,
+    ribbonColor: initialRibbon ?? RIBBON_COLORS[0].name,
     cardMessage: "",
-    note: initialNote ?? "",
-    method: "ambil",
+    note: "",
+    method: initialMethod ?? "ambil",
   });
 
-  // Re-sync product selections every time the modal opens so the
-  // latest wrapping / note choices from the detail page are reflected.
+  // Sync selections from ProductDetail every time the modal opens
   React.useEffect(() => {
     if (!open) return;
     setForm((f) => ({
       ...f,
-      productName: product.name,
-      wrappingColor: initialWrap ?? f.wrappingColor,
-      note: initialNote ?? f.note,
+      productName:   product.name,
+      wrappingColor: initialWrap   ?? f.wrappingColor,
+      ribbonColor:   initialRibbon ?? f.ribbonColor,
+      method:        initialMethod ?? f.method,
     }));
-  }, [open, product.name, initialWrap, initialNote]);
+  }, [open, product.name, initialWrap, initialRibbon, initialMethod]);
 
   const update = <K extends keyof OrderForm>(key: K, value: OrderForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -94,6 +163,8 @@ export function OrderModal({ open, onClose, product, initialWrap, initialNote }:
       description="Isi data di bawah, pesanan akan dikirim via WhatsApp."
     >
       <form onSubmit={handleSubmit} className="space-y-3.5">
+
+        {/* Identitas */}
         <Field label="Nama Pemesan" required htmlFor="name">
           <Input
             id="name"
@@ -145,27 +216,52 @@ export function OrderModal({ open, onClose, product, initialWrap, initialNote }:
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Warna Wrapping" htmlFor="wrap">
-            <Input
-              id="wrap"
-              placeholder="Contoh: Soft Pink"
+        {/* Kustomisasi */}
+        <div className="rounded-2xl border border-blush-100 bg-blush-50/30 px-4 py-3.5 space-y-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">
+            Kustomisasi Bouquet
+          </p>
+
+          <Field label="Warna Wrapping">
+            <ColorPills
+              colors={WRAPPING_COLORS}
               value={form.wrappingColor}
-              onChange={(e) => update("wrappingColor", e.target.value)}
+              onChange={(v) => update("wrappingColor", v)}
             />
           </Field>
-          <Field label="Metode" htmlFor="method">
-            <Select
-              id="method"
-              value={form.method}
-              onChange={(e) => update("method", e.target.value as OrderForm["method"])}
-            >
-              <option value="ambil">Ambil ke store</option>
-              <option value="gosend">GoSend</option>
-            </Select>
+
+          <Field label="Pilihan Pita">
+            <ColorPills
+              colors={RIBBON_COLORS}
+              value={form.ribbonColor}
+              onChange={(v) => update("ribbonColor", v)}
+            />
+          </Field>
+
+          <Field label="Metode Pesanan">
+            <div className="flex rounded-2xl border border-blush-100 bg-white/60 p-1 gap-1">
+              {([
+                { value: "diantar", label: "Diantar" },
+                { value: "ambil",   label: "Ambil di Toko" },
+              ] as const).map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => update("method", value)}
+                  className={`flex-1 h-9 rounded-xl text-xs font-medium transition-all ${
+                    form.method === value
+                      ? "bg-blush-500 text-white shadow-sm"
+                      : "text-ink-500 hover:text-ink-700 hover:bg-blush-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </Field>
         </div>
 
+        {/* Pesan & catatan */}
         <Field label="Kartu Ucapan" htmlFor="card">
           <Textarea
             id="card"
@@ -178,7 +274,7 @@ export function OrderModal({ open, onClose, product, initialWrap, initialNote }:
         <Field label="Catatan Tambahan" htmlFor="note">
           <Textarea
             id="note"
-            placeholder="Request tambahan..."
+            placeholder="Request tambahan, warna spesifik, dll..."
             value={form.note}
             onChange={(e) => update("note", e.target.value)}
           />
@@ -193,6 +289,7 @@ export function OrderModal({ open, onClose, product, initialWrap, initialNote }:
             Batal
           </Button>
         </div>
+
       </form>
     </Modal>
   );

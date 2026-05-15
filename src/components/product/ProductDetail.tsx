@@ -17,14 +17,25 @@ import { ProductGallery } from "./ProductGallery";
 import { OrderModal } from "./OrderModal";
 import { formatRupiah, cn } from "@/lib/utils";
 
-// ── Wrapping options ──────────────────────────────────────────────
+// ── Customisation options ─────────────────────────────────────────
 
 const WRAPPING_COLORS = [
-  { name: "Soft Pink", hex: "#ffd1dc" },
-  { name: "Cream",     hex: "#fde7d2" },
-  { name: "White",     hex: "#ffffff" },
-  { name: "Dusty Rose", hex: "#d4889a" },
-  { name: "Lavender",  hex: "#d6c8e8" },
+  { name: "Pink",          hex: "#F9B8C4" },
+  { name: "Blue",          hex: "#B8D4E8" },
+  { name: "Emerald Green", hex: "#4CAF82" },
+  { name: "Yellow",        hex: "#F9E4A0" },
+  { name: "Lilac",         hex: "#C8B4D8" },
+  { name: "Tosca",         hex: "#62C4BE" },
+  { name: "Grey",          hex: "#B8B8B8" },
+];
+
+const RIBBON_COLORS = [
+  { name: "Gold",       hex: "#D4A843" },
+  { name: "Red",        hex: "#C0392B" },
+  { name: "Baby Blue",  hex: "#89CFF0" },
+  { name: "Maroon",     hex: "#80002B" },
+  { name: "Dusty Pink", hex: "#D4A0A0" },
+  { name: "Silver",     hex: "#A8A9AD" },
 ];
 
 // ── Share option row ──────────────────────────────────────────────
@@ -318,7 +329,8 @@ function ShareButton({
 export function ProductDetail({ product }: { product: Product }) {
   const [open, setOpen] = React.useState(false);
   const [wrap, setWrap] = React.useState(WRAPPING_COLORS[0].name);
-  const [note, setNote] = React.useState("");
+  const [ribbon, setRibbon] = React.useState(RIBBON_COLORS[0].name);
+  const [deliveryMethod, setDeliveryMethod] = React.useState<"ambil" | "diantar">("ambil");
 
   const gallery = product.gallery && product.gallery.length > 0
     ? product.gallery
@@ -371,21 +383,23 @@ export function ProductDetail({ product }: { product: Product }) {
               {product.description}
             </p>
 
+            {/* Pilihan Wrapping */}
             <div className="space-y-2">
               <p className="text-xs font-medium text-ink-700">Pilihan Wrapping</p>
               <div className="flex flex-wrap gap-2">
                 {WRAPPING_COLORS.map((c) => (
                   <button
                     key={c.name}
+                    type="button"
                     onClick={() => setWrap(c.name)}
-                    className={`group flex items-center gap-2 px-3 h-10 rounded-full border text-xs transition ${
+                    className={`flex items-center gap-2 px-3 h-10 rounded-full border text-xs font-medium transition-all ${
                       wrap === c.name
-                        ? "border-blush-500 bg-blush-50 text-blush-700"
-                        : "border-blush-100 text-ink-700 hover:bg-blush-50"
+                        ? "border-blush-500 bg-blush-50 text-blush-700 shadow-sm"
+                        : "border-blush-100 text-ink-700 hover:bg-blush-50 hover:border-blush-200"
                     }`}
                   >
                     <span
-                      className="h-4 w-4 rounded-full border border-ink-900/10"
+                      className="h-4 w-4 rounded-full border border-ink-900/10 shrink-0"
                       style={{ background: c.hex }}
                     />
                     {c.name}
@@ -394,14 +408,53 @@ export function ProductDetail({ product }: { product: Product }) {
               </div>
             </div>
 
+            {/* Pilihan Pita */}
             <div className="space-y-2">
-              <p className="text-xs font-medium text-ink-700">Catatan Tambahan</p>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Permintaan khusus untuk bouquet ini..."
-                className="w-full min-h-[96px] rounded-2xl border border-blush-100 px-4 py-3 text-sm bg-white/80 focus:border-blush-300 focus:outline-none focus:ring-4 focus:ring-blush-100 resize-none"
-              />
+              <p className="text-xs font-medium text-ink-700">Pilihan Pita</p>
+              <div className="flex flex-wrap gap-2">
+                {RIBBON_COLORS.map((c) => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => setRibbon(c.name)}
+                    className={`flex items-center gap-2 px-3 h-10 rounded-full border text-xs font-medium transition-all ${
+                      ribbon === c.name
+                        ? "border-blush-500 bg-blush-50 text-blush-700 shadow-sm"
+                        : "border-blush-100 text-ink-700 hover:bg-blush-50 hover:border-blush-200"
+                    }`}
+                  >
+                    <span
+                      className="h-4 w-4 rounded-full border border-ink-900/10 shrink-0"
+                      style={{ background: c.hex }}
+                    />
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Metode Pesanan */}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-ink-700">Metode Pesanan</p>
+              <div className="flex rounded-2xl border border-blush-100 bg-blush-50/40 p-1 gap-1">
+                {([
+                  { value: "diantar", label: "Diantar" },
+                  { value: "ambil",   label: "Ambil di Toko" },
+                ] as const).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setDeliveryMethod(value)}
+                    className={`flex-1 h-9 rounded-xl text-xs font-medium transition-all ${
+                      deliveryMethod === value
+                        ? "bg-white text-blush-700 shadow-sm border border-blush-200"
+                        : "text-ink-500 hover:text-ink-700 hover:bg-white/60"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Desktop CTA */}
@@ -440,7 +493,8 @@ export function ProductDetail({ product }: { product: Product }) {
         onClose={() => setOpen(false)}
         product={{ ...product }}
         initialWrap={wrap}
-        initialNote={note}
+        initialRibbon={ribbon}
+        initialMethod={deliveryMethod}
       />
     </>
   );

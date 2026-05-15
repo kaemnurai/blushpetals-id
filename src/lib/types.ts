@@ -127,9 +127,10 @@ export interface OrderForm {
   pickupDate: string;
   productName: string;
   wrappingColor?: string;
+  ribbonColor?: string;
   cardMessage?: string;
   note?: string;
-  method: "ambil" | "gosend";
+  method: "ambil" | "diantar";
 }
 
 // ── Analytics ─────────────────────────────────────────────────────

@@ -79,7 +79,8 @@ export async function createOrder(form: OrderForm, product: Product): Promise<st
   // Pack extra info into order_notes so nothing is silently lost
   const notesParts = [
     form.note?.trim() || "",
-    `Metode: ${form.method === "gosend" ? "GoSend (kirim)" : "Ambil di store"}`,
+    form.ribbonColor?.trim() ? `Pita: ${form.ribbonColor.trim()}` : "",
+    `Metode: ${form.method === "diantar" ? "Diantar" : "Ambil di Toko"}`,
     form.cardMessage?.trim() ? `Kartu: ${form.cardMessage.trim()}` : "",
   ].filter(Boolean);
 

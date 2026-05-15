@@ -42,7 +42,7 @@ const STEPS = [
 const FAQ = [
   {
     q: "Berapa lama waktu pembuatan bouquet?",
-    a: "Bouquet artificial bisa same day jika stock tersedia. Fresh flower mohon order minimal H-1 untuk hasil terbaik.",
+    a: "Sameday untuk item ready stock. Order minimal H-3 untuk artificial flowers standar. H-7 untuk signature artificial agar hasil lebih maksimal. H-1 untuk fresh flowers sesuai ketersediaan bunga.",
   },
   {
     q: "Apakah bisa request bouquet custom?",
@@ -50,7 +50,7 @@ const FAQ = [
   },
   {
     q: "Apakah ada free kartu ucapan?",
-    a: "Semua bouquet di atas Rp75.000 free kartu ucapan handwritten dari kami — ditulis dengan penuh kasih sayang.",
+    a: "Free kartu ucapan untuk setiap pemesanan bouquet.",
   },
   {
     q: "Apakah bisa kirim ke luar kota?",
