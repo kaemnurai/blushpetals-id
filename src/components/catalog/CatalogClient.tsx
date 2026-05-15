@@ -26,14 +26,11 @@ import { cn, formatRupiah } from "@/lib/utils";
 // ── Constants ──────────────────────────────────────────────────────
 
 const TABS: { key: "all" | ProductCategory; label: string; emoji: string }[] = [
-  { key: "all",                label: "Semua",                                   emoji: "✿" },
-  { key: "artificial-bouquet", label: CATEGORY_LABEL["artificial-bouquet"],      emoji: "🎀" },
-  { key: "premium-collection", label: CATEGORY_LABEL["premium-collection"],      emoji: "✨" },
-  { key: "fresh-flower",       label: CATEGORY_LABEL["fresh-flower"],            emoji: "🌸" },
-  { key: "graduation",         label: CATEGORY_LABEL["graduation"],              emoji: "🎓" },
-  { key: "money-bouquet",      label: CATEGORY_LABEL["money-bouquet"],           emoji: "💰" },
-  { key: "snack-bouquet",      label: CATEGORY_LABEL["snack-bouquet"],           emoji: "🍫" },
-  { key: "custom",             label: CATEGORY_LABEL["custom"],                  emoji: "🎨" },
+  { key: "all",                label: "Semua",                              emoji: "✿" },
+  { key: "artificial-bouquet", label: CATEGORY_LABEL["artificial-bouquet"], emoji: "🎀" },
+  { key: "premium-collection", label: CATEGORY_LABEL["premium-collection"], emoji: "✨" },
+  { key: "fresh-flower",       label: CATEGORY_LABEL["fresh-flower"],       emoji: "🌸" },
+  { key: "custom",             label: CATEGORY_LABEL["custom"],             emoji: "🎨" },
 ];
 
 const PER_PAGE = 9;
