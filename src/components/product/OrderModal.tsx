@@ -207,7 +207,7 @@ export function OrderModal({
           />
         </Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Field label="Tanggal Pesan" required htmlFor="orderDate">
             <Input
               id="orderDate"
