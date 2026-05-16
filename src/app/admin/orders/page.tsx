@@ -8,6 +8,7 @@ import {
   MessageCircle, RefreshCw, AlertCircle, Trash2,
   MapPin, Gift, StickyNote, ShoppingBag, Truck,
   Search, Package, DollarSign,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -41,7 +42,7 @@ const FILTER_LABEL: Record<OrderStatus | "all", string> = {
   rejected:  "Ditolak",
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 // ── Pickup overlay ────────────────────────────────────────────────
 // "pickup" is stored in browser localStorage (no DB enum needed).
@@ -704,6 +705,70 @@ function OrderSkeleton() {
   );
 }
 
+// ── Pagination ────────────────────────────────────────────────────
+
+type PageItem = number | "…";
+
+function buildPageItems(current: number, total: number): PageItem[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (current <= 4) return [1, 2, 3, 4, 5, "…", total];
+  if (current >= total - 3) return [1, "…", total - 4, total - 3, total - 2, total - 1, total];
+  return [1, "…", current - 1, current, current + 1, "…", total];
+}
+
+function OrdersPagination({
+  page, totalPages, onChange,
+}: {
+  page: number; totalPages: number; onChange: (p: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  const items = buildPageItems(page, totalPages);
+  const btn = "inline-flex items-center justify-center h-8 min-w-[32px] rounded-full text-xs font-medium transition-all select-none";
+  return (
+    <div className="flex items-center justify-center gap-1 mt-6 flex-wrap">
+      {/* Prev */}
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        className={cn(btn, "px-3 gap-1 border border-blush-100 bg-white text-ink-600 hover:border-blush-300 hover:text-blush-700 disabled:opacity-40 disabled:cursor-not-allowed")}
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Prev</span>
+      </button>
+
+      {/* Page numbers */}
+      {items.map((item, idx) =>
+        item === "…" ? (
+          <span key={`e-${idx}`} className="h-8 w-8 flex items-center justify-center text-xs text-ink-300">…</span>
+        ) : (
+          <button
+            key={item}
+            onClick={() => onChange(item)}
+            className={cn(
+              btn, "px-2.5",
+              item === page
+                ? "bg-gradient-to-br from-blush-400 to-blush-600 text-white shadow-sm"
+                : "border border-blush-100 bg-white text-ink-600 hover:border-blush-300 hover:text-blush-700",
+            )}
+          >
+            {item}
+          </button>
+        )
+      )}
+
+      {/* Next */}
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page === totalPages}
+        className={cn(btn, "px-3 gap-1 border border-blush-100 bg-white text-ink-600 hover:border-blush-300 hover:text-blush-700 disabled:opacity-40 disabled:cursor-not-allowed")}
+      >
+        <span className="hidden sm:inline">Next</span>
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 // ── Main content ──────────────────────────────────────────────────
 
 function OrdersContent() {
@@ -901,8 +966,14 @@ function OrdersContent() {
     ? searched
     : searched.filter((o) => getEffectiveStatus(o, pickupOrders) === filter);
 
-  const paged   = filtered.slice(0, page * PAGE_SIZE);
-  const hasMore = paged.length < filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage   = Math.min(page, totalPages);
+  const paged      = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Clamp page if filter/search reduces the total
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
 
   // ── Render ───────────────────────────────────────────────────────
   return (
@@ -1043,24 +1114,19 @@ function OrdersContent() {
         </div>
       )}
 
-      {/* ── Load more ── */}
-      {hasMore && (
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => setPage((p) => p + 1)}
-            className="inline-flex items-center gap-2 h-10 px-6 rounded-full border border-blush-200 bg-white text-sm text-ink-600 hover:bg-blush-50 hover:text-blush-700 transition"
-          >
-            Muat lebih banyak
-            <span className="text-[11px] text-ink-400">({filtered.length - paged.length} lagi)</span>
-          </button>
-        </div>
+      {/* ── Pagination ── */}
+      {!loading && (
+        <OrdersPagination
+          page={safePage}
+          totalPages={totalPages}
+          onChange={setPage}
+        />
       )}
 
-      {/* ── Count ── */}
+      {/* ── Count summary ── */}
       {!loading && filtered.length > 0 && (
-        <p className="mt-4 text-center text-[11px] text-ink-300">
-          {paged.length} dari {filtered.length} pesanan
+        <p className="mt-3 text-center text-[11px] text-ink-300">
+          {((safePage - 1) * PAGE_SIZE) + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} dari {filtered.length} pesanan
         </p>
       )}
 
