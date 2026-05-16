@@ -43,6 +43,28 @@ const FILTER_LABEL: Record<OrderStatus | "all", string> = {
 
 const PAGE_SIZE = 20;
 
+// ── Pickup overlay ────────────────────────────────────────────────
+// "pickup" is stored in browser localStorage (no DB enum needed).
+// An order with status="accepted" + in pickupOrders → shown as "pickup".
+const PICKUP_STORAGE_KEY = "blushpetals_pickup_orders";
+
+function getEffectiveStatus(order: { id: string; status: OrderStatus }, pickupOrders: Set<string>): OrderStatus {
+  if (order.status === "accepted" && pickupOrders.has(order.id)) return "pickup";
+  return order.status;
+}
+
+function loadPickupOrders(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(PICKUP_STORAGE_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch { return new Set(); }
+}
+
+function savePickupOrders(set: Set<string>): void {
+  try { localStorage.setItem(PICKUP_STORAGE_KEY, JSON.stringify([...set])); } catch { /* noop */ }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────
 
 function formatRupiah(n: number) {
@@ -143,15 +165,17 @@ function StatChip({
 // ── Order card (3-column POS layout) ─────────────────────────────
 
 function OrderCard({
-  order, busy, onAccept, onReject, onUpdateStatus, onDelete,
+  order, busy, onAccept, onReject, onUpdateStatus, onDelete, pickupOrders,
 }: {
   order: Order; busy: string | null;
   onAccept: (o: Order) => void;
   onReject: (o: Order) => void;
   onUpdateStatus: (id: string, status: OrderStatus) => void;
   onDelete: (o: Order) => void;
+  pickupOrders: Set<string>;
 }) {
   const isBusy      = busy === order.id;
+  const effStatus   = getEffectiveStatus(order, pickupOrders);
   const firstItem   = order.items?.[0];
   const productName = firstItem?.product_name ?? "Produk";
   const productImg  = firstItem?.product_image ?? null;
@@ -293,10 +317,10 @@ function OrderCard({
 
           {/* Mobile: status + actions inline */}
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-blush-100/50 sm:hidden">
-            <StatusPill status={order.status} />
+            <StatusPill status={effStatus} />
             <div className="flex items-center gap-1.5">
               <ActionRow
-                order={order} isBusy={isBusy}
+                order={order} isBusy={isBusy} effectiveStatus={effStatus}
                 onAccept={onAccept} onReject={onReject}
                 onUpdateStatus={onUpdateStatus} onDelete={onDelete}
               />
@@ -307,12 +331,12 @@ function OrderCard({
         {/* ── RIGHT: Status + actions (desktop only) ── */}
         <div className="hidden sm:flex w-[120px] shrink-0 border-l border-blush-100/50 flex-col items-center justify-between py-3 px-3 gap-2">
           {/* Status pill at top */}
-          <StatusPill status={order.status} />
+          <StatusPill status={effStatus} />
 
           {/* Action buttons stacked */}
           <div className="flex flex-col gap-1.5 w-full">
             <ActionRow
-              order={order} isBusy={isBusy}
+              order={order} isBusy={isBusy} effectiveStatus={effStatus}
               onAccept={onAccept} onReject={onReject}
               onUpdateStatus={onUpdateStatus} onDelete={onDelete}
               vertical
@@ -333,9 +357,9 @@ function OrderCard({
 // ── Action row (shared by mobile footer + desktop right col) ──────
 
 function ActionRow({
-  order, isBusy, onAccept, onReject, onUpdateStatus, onDelete, vertical = false,
+  order, isBusy, effectiveStatus, onAccept, onReject, onUpdateStatus, onDelete, vertical = false,
 }: {
-  order: Order; isBusy: boolean;
+  order: Order; isBusy: boolean; effectiveStatus: OrderStatus;
   onAccept: (o: Order) => void;
   onReject: (o: Order) => void;
   onUpdateStatus: (id: string, status: OrderStatus) => void;
@@ -346,7 +370,7 @@ function ActionRow({
   return (
     <div className={wrap}>
       {/* MENUNGGU → Terima / Tolak */}
-      {order.status === "pending" && (
+      {effectiveStatus === "pending" && (
         <>
           <PosBtn onClick={() => onAccept(order)} loading={isBusy} variant="accept" full={vertical}>
             <CheckCircle2 className="h-3 w-3" /> Terima
@@ -357,7 +381,7 @@ function ActionRow({
         </>
       )}
       {/* DITERIMA → Pickup / Kembalikan ke Menunggu */}
-      {order.status === "accepted" && (
+      {effectiveStatus === "accepted" && (
         <>
           <PosBtn onClick={() => onUpdateStatus(order.id, "pickup")} loading={isBusy} variant="pickup" full={vertical}>
             <Package className="h-3 w-3" /> Pickup
@@ -368,7 +392,7 @@ function ActionRow({
         </>
       )}
       {/* PICKUP → Konfirmasi Selesai / Kembalikan ke Diterima */}
-      {order.status === "pickup" && (
+      {effectiveStatus === "pickup" && (
         <>
           <PosBtn onClick={() => onUpdateStatus(order.id, "completed")} loading={isBusy} variant="complete" full={vertical}>
             <CheckCheck className="h-3 w-3" /> Konfirmasi Selesai
@@ -379,7 +403,7 @@ function ActionRow({
         </>
       )}
       {/* SELESAI → Kembalikan ke Pickup */}
-      {order.status === "completed" && (
+      {effectiveStatus === "completed" && (
         <>
           <PosBtn onClick={() => onUpdateStatus(order.id, "pickup")} loading={isBusy} variant="back" full={vertical}>
             <RefreshCw className="h-3 w-3" /> Ke Pickup
@@ -390,7 +414,7 @@ function ActionRow({
         </>
       )}
       {/* DITOLAK → Kembalikan ke Menunggu */}
-      {order.status === "rejected" && (
+      {effectiveStatus === "rejected" && (
         <>
           <PosBtn onClick={() => onUpdateStatus(order.id, "pending")} loading={isBusy} variant="back" full={vertical}>
             <RefreshCw className="h-3 w-3" /> Ke Menunggu
@@ -697,6 +721,10 @@ function OrdersContent() {
   const [pendingReject, setPendingReject] = React.useState<Order | null>(null);
   const [rejectBusy,    setRejectBusy]    = React.useState(false);
 
+  // Pickup overlay: stored in localStorage, never sent to DB enum
+  const [pickupOrders, setPickupOrders] = React.useState<Set<string>>(() => loadPickupOrders());
+  React.useEffect(() => { savePickupOrders(pickupOrders); }, [pickupOrders]);
+
   const load = React.useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -722,6 +750,10 @@ function OrdersContent() {
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" },
         (p) => {
           const n = p.new as { id: string; status: OrderStatus; extra_cost?: number; extra_cost_note?: string | null };
+          // If DB status changed away from "accepted", remove pickup overlay for this order
+          if (n.status !== "accepted") {
+            setPickupOrders((prev) => { const ns = new Set(prev); ns.delete(n.id); return ns; });
+          }
           setOrders((prev) =>
             prev.map((o) =>
               o.id === n.id
@@ -744,6 +776,39 @@ function OrdersContent() {
   React.useEffect(() => { setPage(1); }, [filter, search]);
 
   const updateStatus = async (id: string, status: OrderStatus) => {
+    // "pickup" is managed via localStorage overlay — never sent to DB enum.
+    if (status === "pickup") {
+      const currentOrder = orders.find((o) => o.id === id);
+      // If currently "completed" in DB, revert to "accepted" first so the
+      // order flows correctly when the admin later confirms selesai.
+      if (currentOrder?.status === "completed") {
+        setBusy(id);
+        try {
+          await adminUpdateOrderStatus(id, "accepted");
+          setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: "accepted" as OrderStatus } : o)));
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : "Gagal update status");
+          setBusy(null);
+          return;
+        } finally {
+          setBusy(null);
+        }
+      }
+      setPickupOrders((prev) => new Set([...prev, id]));
+      toast.success("Status diperbarui ke Pickup");
+      return;
+    }
+
+    // Moving away from pickup: remove overlay
+    if (pickupOrders.has(id)) {
+      setPickupOrders((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      // "Ke Diterima" (accepted) from pickup: DB is already "accepted" — no network call needed.
+      if (status === "accepted") {
+        toast.success("Status dikembalikan ke Diterima");
+        return;
+      }
+    }
+
     setBusy(id);
     try {
       await adminUpdateOrderStatus(id, status);
@@ -812,12 +877,12 @@ function OrdersContent() {
   // ── Counts ──────────────────────────────────────────────────────
   const counts = React.useMemo(() => ({
     all:       orders.length,
-    pending:   orders.filter((o) => o.status === "pending").length,
-    accepted:  orders.filter((o) => o.status === "accepted").length,
-    pickup:    orders.filter((o) => o.status === "pickup").length,
-    completed: orders.filter((o) => o.status === "completed").length,
-    rejected:  orders.filter((o) => o.status === "rejected").length,
-  }), [orders]);
+    pending:   orders.filter((o) => getEffectiveStatus(o, pickupOrders) === "pending").length,
+    accepted:  orders.filter((o) => getEffectiveStatus(o, pickupOrders) === "accepted").length,
+    pickup:    orders.filter((o) => getEffectiveStatus(o, pickupOrders) === "pickup").length,
+    completed: orders.filter((o) => getEffectiveStatus(o, pickupOrders) === "completed").length,
+    rejected:  orders.filter((o) => getEffectiveStatus(o, pickupOrders) === "rejected").length,
+  }), [orders, pickupOrders]);
 
   // ── Search + filter pipeline ─────────────────────────────────────
   const searched = React.useMemo(() => {
@@ -834,7 +899,7 @@ function OrdersContent() {
 
   const filtered = filter === "all"
     ? searched
-    : searched.filter((o) => o.status === filter);
+    : searched.filter((o) => getEffectiveStatus(o, pickupOrders) === filter);
 
   const paged   = filtered.slice(0, page * PAGE_SIZE);
   const hasMore = paged.length < filtered.length;
@@ -968,6 +1033,7 @@ function OrdersContent() {
               key={order.id}
               order={order}
               busy={busy}
+              pickupOrders={pickupOrders}
               onAccept={setPendingAccept}
               onReject={setPendingReject}
               onUpdateStatus={updateStatus}
