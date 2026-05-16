@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
                   type="email"
                   required
                   autoComplete="email"
-                  placeholder="admin@blushpetals.id"
+                  placeholder="Masukkan user"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full h-11 pl-10 pr-4 rounded-2xl border border-blush-100 bg-white/70 text-sm text-ink-900 placeholder:text-ink-300
