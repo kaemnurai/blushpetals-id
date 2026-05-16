@@ -61,6 +61,7 @@ function timeAgo(d: string) {
 const STATUS_DOT: Record<OrderStatus, string> = {
   pending:   "bg-amber-400",
   accepted:  "bg-blue-400",
+  pickup:    "bg-orange-400",
   completed: "bg-emerald-400",
   rejected:  "bg-red-400",
 };
@@ -68,6 +69,7 @@ const STATUS_DOT: Record<OrderStatus, string> = {
 const STATUS_LABEL_MAP: Record<OrderStatus, string> = {
   pending:   "Menunggu",
   accepted:  "Diterima",
+  pickup:    "Pickup",
   completed: "Selesai",
   rejected:  "Ditolak",
 };

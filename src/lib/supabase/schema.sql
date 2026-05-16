@@ -16,7 +16,7 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-  CREATE TYPE order_status AS ENUM ('pending', 'accepted', 'rejected', 'completed');
+  CREATE TYPE order_status AS ENUM ('pending', 'accepted', 'pickup', 'completed', 'rejected');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 

@@ -36,6 +36,7 @@ const FILTER_LABEL: Record<OrderStatus | "all", string> = {
   all:       "Semua",
   pending:   "Menunggu",
   accepted:  "Diterima",
+  pickup:    "Pickup",
   completed: "Selesai",
   rejected:  "Ditolak",
 };
@@ -76,6 +77,7 @@ function fmtFull(d: string) {
 const STATUS_DOT_COLOR: Record<OrderStatus, string> = {
   pending:   "bg-amber-400",
   accepted:  "bg-blue-400",
+  pickup:    "bg-orange-400",
   completed: "bg-emerald-400",
   rejected:  "bg-red-400",
 };
@@ -83,6 +85,7 @@ const STATUS_DOT_COLOR: Record<OrderStatus, string> = {
 const STATUS_TEXT_COLOR: Record<OrderStatus, string> = {
   pending:   "text-amber-700",
   accepted:  "text-blue-700",
+  pickup:    "text-orange-700",
   completed: "text-emerald-700",
   rejected:  "text-red-600",
 };
@@ -342,41 +345,60 @@ function ActionRow({
   const wrap = vertical ? "flex flex-col gap-1.5 w-full" : "flex gap-1.5 flex-wrap";
   return (
     <div className={wrap}>
+      {/* MENUNGGU → Terima / Tolak */}
       {order.status === "pending" && (
         <>
-          <PosBtn
-            onClick={() => onAccept(order)}
-            loading={isBusy} variant="accept" full={vertical}
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            Terima
+          <PosBtn onClick={() => onAccept(order)} loading={isBusy} variant="accept" full={vertical}>
+            <CheckCircle2 className="h-3 w-3" /> Terima
           </PosBtn>
-          <PosBtn
-            onClick={() => onReject(order)}
-            loading={isBusy} variant="reject" full={vertical}
-          >
-            <XCircle className="h-3 w-3" />
-            Tolak
+          <PosBtn onClick={() => onReject(order)} loading={isBusy} variant="reject" full={vertical}>
+            <XCircle className="h-3 w-3" /> Tolak
           </PosBtn>
         </>
       )}
+      {/* DITERIMA → Pickup / Kembalikan ke Menunggu */}
       {order.status === "accepted" && (
-        <PosBtn
-          onClick={() => onUpdateStatus(order.id, "completed")}
-          loading={isBusy} variant="complete" full={vertical}
-        >
-          <CheckCheck className="h-3 w-3" />
-          Selesai
-        </PosBtn>
+        <>
+          <PosBtn onClick={() => onUpdateStatus(order.id, "pickup")} loading={isBusy} variant="pickup" full={vertical}>
+            <Package className="h-3 w-3" /> Pickup
+          </PosBtn>
+          <PosBtn onClick={() => onUpdateStatus(order.id, "pending")} loading={isBusy} variant="back" full={vertical}>
+            <RefreshCw className="h-3 w-3" /> Ke Menunggu
+          </PosBtn>
+        </>
       )}
-      {(order.status === "rejected" || order.status === "completed") && (
-        <PosBtn
-          onClick={() => onDelete(order)}
-          loading={false} variant="delete" full={vertical}
-        >
-          <Trash2 className="h-3 w-3" />
-          {vertical && "Hapus"}
-        </PosBtn>
+      {/* PICKUP → Konfirmasi Selesai / Kembalikan ke Diterima */}
+      {order.status === "pickup" && (
+        <>
+          <PosBtn onClick={() => onUpdateStatus(order.id, "completed")} loading={isBusy} variant="complete" full={vertical}>
+            <CheckCheck className="h-3 w-3" /> Konfirmasi Selesai
+          </PosBtn>
+          <PosBtn onClick={() => onUpdateStatus(order.id, "accepted")} loading={isBusy} variant="back" full={vertical}>
+            <RefreshCw className="h-3 w-3" /> Ke Diterima
+          </PosBtn>
+        </>
+      )}
+      {/* SELESAI → Kembalikan ke Pickup */}
+      {order.status === "completed" && (
+        <>
+          <PosBtn onClick={() => onUpdateStatus(order.id, "pickup")} loading={isBusy} variant="back" full={vertical}>
+            <RefreshCw className="h-3 w-3" /> Ke Pickup
+          </PosBtn>
+          <PosBtn onClick={() => onDelete(order)} loading={false} variant="delete" full={vertical}>
+            <Trash2 className="h-3 w-3" /> {vertical && "Hapus"}
+          </PosBtn>
+        </>
+      )}
+      {/* DITOLAK → Kembalikan ke Menunggu */}
+      {order.status === "rejected" && (
+        <>
+          <PosBtn onClick={() => onUpdateStatus(order.id, "pending")} loading={isBusy} variant="back" full={vertical}>
+            <RefreshCw className="h-3 w-3" /> Ke Menunggu
+          </PosBtn>
+          <PosBtn onClick={() => onDelete(order)} loading={false} variant="delete" full={vertical}>
+            <Trash2 className="h-3 w-3" /> {vertical && "Hapus"}
+          </PosBtn>
+        </>
       )}
     </div>
   );
@@ -387,7 +409,9 @@ function ActionRow({
 const POS_STYLES = {
   accept:   "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-100",
   reject:   "bg-red-50 text-red-500 hover:bg-red-100 border border-red-100",
+  pickup:   "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-100",
   complete: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100",
+  back:     "bg-blush-50 text-ink-500 hover:bg-blush-100 border border-blush-100",
   delete:   "bg-red-50 text-red-400 hover:bg-red-100 border border-red-100",
 };
 
@@ -790,14 +814,10 @@ function OrdersContent() {
     all:       orders.length,
     pending:   orders.filter((o) => o.status === "pending").length,
     accepted:  orders.filter((o) => o.status === "accepted").length,
+    pickup:    orders.filter((o) => o.status === "pickup").length,
     completed: orders.filter((o) => o.status === "completed").length,
     rejected:  orders.filter((o) => o.status === "rejected").length,
   }), [orders]);
-
-  const todayStr        = new Date().toISOString().slice(0, 10);
-  const completedToday  = orders.filter(
-    (o) => o.status === "completed" && o.created_at?.startsWith(todayStr),
-  ).length;
 
   // ── Search + filter pipeline ─────────────────────────────────────
   const searched = React.useMemo(() => {
@@ -848,24 +868,24 @@ function OrdersContent() {
       {/* ── Summary stat chips ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-5">
         <StatChip
-          icon={Package}       label="Total"     value={loading ? 0 : counts.all}
-          dotColor="text-blush-500" active={filter === "all"} onClick={() => setFilter("all")}
+          icon={Package}      label="Total"    value={loading ? 0 : counts.all}
+          dotColor="text-blush-500"   active={filter === "all"}       onClick={() => setFilter("all")}
         />
         <StatChip
-          icon={Clock}         label="Menunggu"  value={loading ? 0 : counts.pending}
-          dotColor="text-amber-500" active={filter === "pending"} onClick={() => setFilter("pending")}
+          icon={Clock}        label="Menunggu" value={loading ? 0 : counts.pending}
+          dotColor="text-amber-500"   active={filter === "pending"}   onClick={() => setFilter("pending")}
         />
         <StatChip
-          icon={CheckCircle2}  label="Diterima"  value={loading ? 0 : counts.accepted}
-          dotColor="text-blue-500" active={filter === "accepted"} onClick={() => setFilter("accepted")}
+          icon={CheckCircle2} label="Diterima" value={loading ? 0 : counts.accepted}
+          dotColor="text-blue-500"    active={filter === "accepted"}  onClick={() => setFilter("accepted")}
         />
         <StatChip
-          icon={CheckCheck}    label="Selesai Hari Ini" value={loading ? 0 : completedToday}
+          icon={Truck}        label="Pickup"   value={loading ? 0 : counts.pickup}
+          dotColor="text-orange-500"  active={filter === "pickup"}    onClick={() => setFilter("pickup")}
+        />
+        <StatChip
+          icon={CheckCheck}   label="Selesai"  value={loading ? 0 : counts.completed}
           dotColor="text-emerald-500" active={filter === "completed"} onClick={() => setFilter("completed")}
-        />
-        <StatChip
-          icon={XCircle}       label="Ditolak"   value={loading ? 0 : counts.rejected}
-          dotColor="text-red-400" active={filter === "rejected"} onClick={() => setFilter("rejected")}
         />
       </div>
 

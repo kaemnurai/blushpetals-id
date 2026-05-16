@@ -14,7 +14,7 @@ export type StockStatus = "tersedia" | "preorder" | "sold-out";
 
 export type ProductStatus = "available" | "sold_out" | "hidden";
 
-export type OrderStatus = "pending" | "accepted" | "rejected" | "completed";
+export type OrderStatus = "pending" | "accepted" | "pickup" | "completed" | "rejected";
 
 // ── Product ───────────────────────────────────────────────────────
 // `name` maps to the `title` column in the DB.
@@ -210,6 +210,7 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   pending:   "Menunggu",
   accepted:  "Diterima",
-  rejected:  "Ditolak",
+  pickup:    "Pickup",
   completed: "Selesai",
+  rejected:  "Ditolak",
 };
