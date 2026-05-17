@@ -115,7 +115,7 @@ function Dashboard() {
         const ps = (prodsRes.data  ?? []) as { stock_status: string }[];
         const os = (ordersRes.data ?? []) as OrderRow[];
 
-        const billable = os.filter(o => o.status === "accepted" || o.status === "completed");
+        const billable = os.filter(o => o.status === "completed");
         const rev = (arr: OrderRow[]) => arr.reduce((acc, o) => acc + (o.total_price || 0), 0);
 
         setStats({

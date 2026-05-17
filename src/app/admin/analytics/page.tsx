@@ -132,7 +132,7 @@ function getPeriodBounds(p: Period) {
 }
 
 function buildChartPts(orders: OrderRaw[], items: ItemRaw[], period: Period): ChartPoint[] {
-  const bill = orders.filter(o => o.status === "accepted" || o.status === "completed");
+  const bill = orders.filter(o => o.status === "completed");
   const { start } = getPeriodBounds(period);
   const now = new Date();
 
@@ -511,7 +511,7 @@ function AnalyticsContent() {
   // ── Derived calculations ─────────────────────────────────────────
 
   const C = React.useMemo(() => {
-    const bill = rawOrders.filter(o => o.status === "accepted" || o.status === "completed");
+    const bill = rawOrders.filter(o => o.status === "completed");
     const { start, prevStart, prevEnd, days } = getPeriodBounds(period);
 
     // Build modalMap: orderId -> sum of (capital_price × qty)
@@ -711,9 +711,8 @@ function AnalyticsContent() {
           <h1 className="font-serif text-3xl text-ink-900">Analitik</h1>
           <p className="text-[13px] text-ink-400 mt-1.5">
             Semua data dihitung dari pesanan berstatus{" "}
-            <span className="text-emerald-600 font-medium">Diterima</span>
-            {" "}&{" "}
-            <span className="text-emerald-600 font-medium">Selesai</span>.
+            <span className="text-emerald-600 font-medium">Selesai</span>
+            {" "}saja.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -795,7 +794,7 @@ function AnalyticsContent() {
           <div className="flex items-start justify-between px-5 pt-5 pb-2">
             <div>
               <p className="font-semibold text-[14px] text-ink-900 mb-0.5">Revenue & Profit Trend</p>
-              <p className="text-[11px] text-ink-400">Order Diterima + Selesai</p>
+              <p className="text-[11px] text-ink-400">Order Selesai</p>
             </div>
             {!loading && (
               <div className="text-right space-y-0.5">

@@ -114,7 +114,7 @@ async function fetchOrdersSafe(sb: any): Promise<TxOrder[]> {
   const fullSel = "id,customer_name,whatsapp,status,total_price,extra_cost,extra_cost_note,order_date,pickup_date,delivery_method,wrapping,greeting_card,order_notes,created_at";
   const { data, error } = await sb.from("orders")
     .select(fullSel)
-    .in("status", ["accepted", "completed"])
+    .in("status", ["completed"])
     .order("created_at", { ascending: false });
 
   if (!error) {
@@ -144,7 +144,7 @@ async function fetchOrdersSafe(sb: any): Promise<TxOrder[]> {
   // Fallback: minimal columns
   const { data: d2, error: e2 } = await sb.from("orders")
     .select("id,customer_name,whatsapp,status,total_price,pickup_date,wrapping,order_notes,created_at")
-    .in("status", ["accepted", "completed"])
+    .in("status", ["completed"])
     .order("created_at", { ascending: false });
   if (e2) throw new Error(e2.message);
 
@@ -555,9 +555,7 @@ function TransaksiContent() {
           <p className="section-label mb-1">Laporan</p>
           <h1 className="font-serif text-3xl text-ink-900">Transaksi</h1>
           <p className="text-sm text-ink-400 mt-1">
-            Seluruh pesanan{" "}
-            <span className="text-emerald-600 font-medium">Diterima</span>
-            {" "}&amp;{" "}
+            Seluruh pesanan berstatus{" "}
             <span className="text-emerald-600 font-medium">Selesai</span>
             {" "}dengan rincian revenue, modal, dan profit.
           </p>
